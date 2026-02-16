@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Personal Information Schema",
+  "description": "Informações pessoais do candidato",
+  "type": "object",
+  "required": ["name", "email"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 100,
+      "description": "Nome completo",
+      "example": "João Silva Santos"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email profissional",
+      "example": "joao.silva@email.com"
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^\\+?[0-9\\s\\-\\(\\)]+$",
+      "description": "Telefone com DDD",
+      "example": "+55 (11) 98765-4321"
+    },
+    "whatsapp": {
+      "type": "string",
+      "pattern": "^\\+?[0-9\\s\\-\\(\\)]+$",
+      "description": "WhatsApp (pode ser igual ao phone)",
+      "example": "+55 (11) 98765-4321"
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string",
+          "description": "Cidade",
+          "example": "São Paulo"
+        },
+        "state": {
+          "type": "string",
+          "maxLength": 2,
+          "description": "Estado (UF)",
+          "example": "SP"
+        },
+        "country": {
+          "type": "string",
+          "default": "Brasil",
+          "description": "País"
+        },
+        "remote": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disponível para trabalho remoto"
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "properties": {
+        "linkedin": {
+          "type": "string",
+          "format": "uri",
+          "description": "Perfil do LinkedIn",
+          "example": "https://linkedin.com/in/joaosilva"
+        },
+        "github": {
+          "type": "string",
+          "format": "uri",
+          "description": "Perfil do GitHub",
+          "example": "https://github.com/joaosilva"
+        },
+        "portfolio": {
+          "type": "string",
+          "format": "uri",
+          "description": "Site pessoal ou portfólio",
+          "example": "https://joaosilva.dev"
+        },
+        "other": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "url": { "type": "string", "format": "uri" }
+            }
+          },
+          "description": "Outros links relevantes"
+        }
+      }
+    }
+  }
+}

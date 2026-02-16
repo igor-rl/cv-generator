@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Geração de Currículos Estratégicos</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <h1>Sistema de Geração de Currículos Estratégicos</h1>
+        <p>Crie currículos otimizados com análise de elegibilidade por IA</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="data">📝 Meus Dados</button>
+        <button class="tab-btn" data-tab="generate">🎯 Gerar Currículo</button>
+        <button class="tab-btn" data-tab="result">✨ Resultado</button>
+    </div>
+
+    <div class="tab-content active" id="tab-data">
+        <h2>Meus Dados Profissionais</h2>
+        <div class="section">
+            <h3>Informações Pessoais</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Nome Completo *</label><input type="text" id="name" placeholder="João Silva Santos"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="email" placeholder="joao.silva@email.com"></div>
+                <div class="form-group"><label>Telefone / WhatsApp</label><input type="tel" id="phone" placeholder="+55 (11) 98765-4321"></div>
+                <div class="form-group"><label>Cidade</label><input type="text" id="city" placeholder="São Paulo"></div>
+                <div class="form-group"><label>Estado</label><input type="text" id="state" placeholder="SP" maxlength="2"></div>
+                <div class="form-group"><label><input type="checkbox" id="remote"> Disponível para remoto</label></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label>LinkedIn</label><input type="url" id="linkedin" placeholder="https://linkedin.com/in/seuperfil"></div>
+                <div class="form-group"><label>GitHub</label><input type="url" id="github" placeholder="https://github.com/seuusuario"></div>
+                <div class="form-group"><label>Portfólio / Site</label><input type="url" id="portfolio" placeholder="https://seusite.dev"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Histórico Profissional</h3>
+            <textarea id="history" rows="20" placeholder="Cole seu histórico profissional em Markdown"></textarea>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" onclick="saveData()">💾 Salvar Dados</button>
+        </div>
+
+        <div class="status" id="saveStatus"></div>
+    </div>
+
+    <div class="tab-content" id="tab-generate">
+        <h2>Gerar Currículo para Vaga</h2>
+        <div class="section">
+            <h3>Descrição da Vaga</h3>
+            <textarea id="jobDescription" rows="15" placeholder="Cole aqui a descrição da vaga completa"></textarea>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary btn-large" onclick="generatePrompt()">🚀 Gerar Prompt para ChatGPT</button>
+        </div>
+
+        <div class="section" id="promptOutput" style="display: none;">
+            <h3>Prompt Gerado</h3>
+            <div class="output-box">
+                <div class="output-header">
+                    <span>📋 Prompt Completo</span>
+                    <button class="btn btn-small" onclick="copyPrompt()">Copiar</button>
+                </div>
+                <pre id="generatedPrompt"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-result">
+        <h2>Resultado Final</h2>
+        <div class="section">
+            <h3>JSON do ChatGPT</h3>
+            <textarea id="finalJson" rows="10" placeholder='{ "versao": "1.0.0", "data_geracao": "2025-02-16", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary btn-large" onclick="processResult()">✨ Processar e Visualizar</button>
+        </div>
+
+        <div id="eligibilitySection" style="display: none;">
+            <div class="section"><h3>📊 Análise de Elegibilidade</h3><div id="eligibilityContent"></div></div>
+        </div>
+
+        <div id="resumeActions" style="display: none;">
+            <div class="actions">
+                <button class="btn btn-success" onclick="viewResume()">👁️ Visualizar Currículo</button>
+                <button class="btn btn-primary" onclick="downloadJson()">💾 Baixar JSON</button>
+                <button class="btn btn-secondary" onclick="newResume()">🔄 Novo Currículo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>

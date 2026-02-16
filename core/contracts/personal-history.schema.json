@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Professional History Schema",
+  "description": "Histórico profissional completo do candidato (formato texto/markdown)",
+  "type": "object",
+  "required": ["content", "last_updated"],
+  "properties": {
+    "content": {
+      "type": "string",
+      "minLength": 100,
+      "description": "Histórico profissional em markdown - formato livre, sem direcionamento para vagas específicas. Deve conter todas as experiências, projetos, habilidades e resultados alcançados de forma factual.",
+      "example": "## EXPERIÊNCIA PROFISSIONAL\\n\\n### Empresa XYZ - Desenvolvedor Senior | Jan 2022 - Atual\\n\\n**Stack:** Node.js, TypeScript, PostgreSQL...\\n\\n**Responsabilidades:**\\n- Desenvolvimento de APIs REST\\n- Arquitetura de microsserviços\\n\\n**Métricas:**\\n- Redução de 60% na latência\\n- Processamento de 50M req/mês"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da última atualização do histórico",
+      "example": "2025-02-16"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "total_years_experience": {
+          "type": "number",
+          "description": "Total de anos de experiência profissional",
+          "example": 8
+        },
+        "primary_technologies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Principais tecnologias/stacks dominados",
+          "example": ["Node.js", "TypeScript", "PostgreSQL", "AWS"]
+        },
+        "current_level": {
+          "type": "string",
+          "enum": ["junior", "pleno", "senior", "tech-lead", "staff", "principal"],
+          "description": "Nível atual de senioridade"
+        },
+        "number_of_positions": {
+          "type": "integer",
+          "description": "Número de posições/experiências profissionais",
+          "example": 5
+        }
+      }
+    }
+  }
+}

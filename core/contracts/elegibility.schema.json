@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Eligibility Analysis Schema",
+  "description": "Resultado da análise de elegibilidade do candidato para a vaga",
+  "type": "object",
+  "required": ["pontuacao_estrelas", "status", "pontos_fortes", "pontos_fracos", "recomendacao"],
+  "properties": {
+    "pontuacao_estrelas": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Pontuação de 1 a 5 estrelas",
+      "example": 4
+    },
+    "pontuacao_percentual": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Pontuação em percentual (0-100)",
+      "example": 80
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "NÃO ELEGÍVEL",
+        "BAIXA ELEGIBILIDADE",
+        "PARCIALMENTE ELEGÍVEL",
+        "ELEGÍVEL",
+        "ALTAMENTE ELEGÍVEL"
+      ],
+      "description": "Status de elegibilidade baseado na pontuação"
+    },
+    "analise": {
+      "type": "object",
+      "properties": {
+        "requisitos_obrigatorios": {
+          "type": "object",
+          "properties": {
+            "atende": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Lista de requisitos obrigatórios que o candidato atende"
+            },
+            "nao_atende": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Lista de requisitos obrigatórios que o candidato NÃO atende"
+            }
+          }
+        },
+        "requisitos_desejaveis": {
+          "type": "object",
+          "properties": {
+            "atende": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "nao_atende": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "pontos_fortes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Lista de pontos fortes do candidato para esta vaga"
+    },
+    "pontos_fracos": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Lista de pontos fracos ou gaps identificados"
+    },
+    "gaps_criticos": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Gaps críticos que podem impedir contratação"
+    },
+    "recomendacao": {
+      "type": "string",
+      "enum": ["NÃO PROSSEGUIR", "PROSSEGUIR COM ATENÇÃO", "PROSSEGUIR"],
+      "description": "Recomendação final sobre prosseguir ou não"
+    },
+    "justificativa": {
+      "type": "string",
+      "description": "Justificativa detalhada da recomendação"
+    },
+    "sugestoes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sugestões para melhorar elegibilidade ou preparação para entrevista"
+    },
+    "perguntas_ao_candidato": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Perguntas que precisam ser respondidas para melhor avaliação"
+    }
+  }
+}

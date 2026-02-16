@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currículo Profissional</title>
+    <link rel="stylesheet" href="assets/css/resume.css">
+</head>
+<body>
+    <div class="resume-container">
+        <div class="resume-content" id="resumeContent">
+            <!-- Conteúdo será injetado via JavaScript -->
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <button onclick="window.print()" class="btn">🖨️ Imprimir / Salvar PDF</button>
+        <button onclick="window.close()" class="btn">← Voltar</button>
+    </div>
+
+    <script>
+        // Load resume from sessionStorage and render
+        document.addEventListener('DOMContentLoaded', () => {
+            const resumeData = sessionStorage.getItem('current_resume');
+            
+            if (!resumeData) {
+                document.getElementById('resumeContent').innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <h2>Nenhum currículo carregado</h2>
+                        <p>Por favor, gere um currículo no sistema principal primeiro.</p>
+                        <button onclick="window.close()" style="margin-top: 20px; padding: 12px 24px; cursor: pointer;">Voltar</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(resumeData);
+                renderResume(data);
+            } catch (error) {
+                alert('Erro ao carregar currículo: ' + error.message);
+            }
+        });
+
+        function renderResume(data) {
+            function formatPeriod(period) {
+                if (!period) return '';
+                if (typeof period === 'string') return period; // Já formatado como "2025–Atual"
+                const start = period.start ? formatDate(period.start) : '';
+                const end = period.end === 'current' ? 'Atual' : (period.end ? formatDate(period.end) : '');
+                return `${start} – ${end}`;
+            }
+
+            function formatDate(dateStr) {
+                if (!dateStr) return '';
+                if (dateStr.length === 4) return dateStr;
+                const [year, month] = dateStr.split('-');
+                const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                return `${months[parseInt(month) - 1]} ${year}`;
+            }
+
+            // Adaptar estrutura do header (aceitar múltiplos formatos)
+            const header = data.header || data;
+            const meta = data.meta || {};
+            const name = header.nome || header.name || 'Nome não informado';
+            const headline = meta.cargo_alvo || header.headline || 'Desenvolvedor';
+            const email = header.email;
+            const phone = header.telefone || header.phone;
+            const linkedin = header.linkedin;
+            const github = header.github;
+            const portfolio = header.portfolio;
+            const location = header.localizacao || (header.location ? `${header.location.city}, ${header.location.state}` : '');
+
+            const html = `
+                <div class="resume-header">
+                    <h1 class="name">${name}</h1>
+                    <div class="headline">${headline}</div>
+                    <div class="contact-info">
+                        ${email ? `<span>e-mail: ${email}</span>` : ''} |
+                        ${phone ? `<span>celular e WhatsApp: ${phone}</span>` : ''}
+                    </div>
+                    <div class="contact-info">
+                        ${linkedin ? `<span>Linkedin: ${linkedin.replace('https://', '').replace('http://', '')}</span>` : ''} |
+                        ${github ? `<span>GitHub: ${github.replace('https://', '').replace('http://', '')}</span>` : ''} |
+                        ${portfolio ? `<span>Portifólio: ${portfolio.replace('https://', '').replace('http://', '')}</span>` : ''}
+                    </div>
+                </div>
+
+                ${data.summary ? `
+                    <div class="section">
+                        <h2 class="section-title">RESUMO PROFISSIONAL</h2>
+                        <p class="summary-text">${data.summary}</p>
+                    </div>
+                ` : ''}
+
+                ${data.core_competencies ? `
+                    <div class="section">
+                        <h2 class="section-title">COMPETÊNCIAS TÉCNICAS</h2>
+                        <div class="skills-grid">
+                            ${Object.entries(data.core_competencies).map(([key, values]) => {
+                                if (!values || values.length === 0) return '';
+                                const titles = {
+                                    'backend': 'Backend & Frameworks',
+                                    'languages_runtime': 'Linguagens & Runtime',
+                                    'frameworks_libraries': 'Frameworks & Bibliotecas',
+                                    'databases': 'Bancos de Dados',
+                                    'bancos_de_dados': 'Bancos de Dados',
+                                    'cloud_infrastructure': 'Cloud & Infraestrutura',
+                                    'devops_e_infra': 'DevOps & Infraestrutura',
+                                    'messaging_queues': 'Mensageria & Filas',
+                                    'mensageria_e_integracao': 'Mensageria & Integração',
+                                    'testing_quality': 'Testes & Qualidade',
+                                    'devops_ci_cd': 'DevOps & CI/CD',
+                                    'methodologies': 'Metodologias',
+                                    'seguranca': 'Segurança'
+                                };
+                                return `
+                                    <div class="skill-group">
+                                        <strong>${titles[key] || key.replace(/_/g, ' ')}:</strong>
+                                        <span>${Array.isArray(values) ? values.join(', ') : values}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${data.experience && data.experience.length > 0 ? `
+                    <div class="section">
+                        <h2 class="section-title">EXPERIÊNCIA PROFISSIONAL</h2>
+                        ${data.experience.map(exp => {
+                            // Adaptar para múltiplos formatos
+                            const role = exp.role || exp.projeto || exp.position || 'Desenvolvedor';
+                            const company = exp.company || exp.empresa || '';
+                            const period = exp.periodo || formatPeriod(exp.period);
+                            
+                            // Aceitar tanto "highlights" quanto "descricao"
+                            let highlights = exp.highlights || exp.descricao || exp.description || [];
+                            
+                            // Se for string, converter para array
+                            if (typeof highlights === 'string') {
+                                highlights = [highlights];
+                            }
+                            
+                            return `
+                            <div class="experience-item">
+                                <div class="exp-header">
+                                    <div>
+                                        <h3 class="exp-role">${role}</h3>
+                                        ${company ? `<div class="exp-company">${company}</div>` : ''}
+                                    </div>
+                                    <div class="exp-period">${period}</div>
+                                </div>
+                                ${exp.location || exp.localizacao ? `<div class="exp-location">${exp.location || exp.localizacao}</div>` : ''}
+                                ${highlights && highlights.length > 0 ? `
+                                    <ul class="highlights">
+                                        ${highlights.map(h => `<li>${h}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                                ${exp.stack && exp.stack.length > 0 ? `
+                                    <div style="margin-top: 8px; font-size: 13px; color: #6b7280;">
+                                        <strong>Stack:</strong> ${exp.stack.join(', ')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `}).join('')}
+                    </div>
+                ` : ''}
+
+                ${data.projects && data.projects.length > 0 ? `
+                    <div class="section">
+                        <h2 class="section-title">PROJETOS EM DESTAQUE</h2>
+                        ${data.projects.map(proj => `
+                            <div class="project-item">
+                                <h3 class="project-name">${proj.name}</h3>
+                                ${proj.description ? `<p>${proj.description}</p>` : ''}
+                                ${proj.impact && proj.impact.length > 0 ? `
+                                    <ul class="project-impact">
+                                        ${proj.impact.map(i => `<li>${i}</li>`).join('')}
+                                    </ul>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+
+                ${data.education && data.education.length > 0 ? `
+                    <div class="section">
+                        <h2 class="section-title">FORMAÇÃO ACADÊMICA</h2>
+                        ${data.education.map(edu => `
+                            <div class="education-item">
+                                <strong>${edu.degree || edu.curso}</strong><br>
+                                ${edu.institution || edu.instituicao}${edu.period ? ` • ${formatPeriod(edu.period)}` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+
+                ${data.certifications && data.certifications.length > 0 ? `
+                    <div class="section">
+                        <h2 class="section-title">CERTIFICAÇÕES</h2>
+                        ${data.certifications.map(cert => `
+                            <div class="cert-item">
+                                <strong>${cert.name}</strong> • ${cert.issuer}${cert.date ? ` • ${formatDate(cert.date)}` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+
+                ${data.languages && data.languages.length > 0 ? `
+                    <div class="section">
+                        <h2 class="section-title">IDIOMAS</h2>
+                        <div class="languages">
+                            ${data.languages.map(lang => {
+                                const language = lang.language || lang.idioma;
+                                const proficiency = lang.proficiency || lang.nivel;
+                                return `<span><strong>${language}:</strong> ${proficiency}</span>`;
+                            }).join(' • ')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+
+            document.getElementById('resumeContent').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

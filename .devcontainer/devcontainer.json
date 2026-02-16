@@ -1,0 +1,23 @@
+{
+  "name": "Python Pipenv Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace",
+  "settings": {
+    "python.defaultInterpreterPath": "/usr/local/bin/python",
+    "python.terminal.activateEnvironment": false,
+    "terminal.integrated.defaultProfile.linux": "bash"
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-toolsai.jupyter"
+  ],
+  "remoteUser": "root",
+  "postCreateCommand": "pipenv install --dev",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ]
+}
