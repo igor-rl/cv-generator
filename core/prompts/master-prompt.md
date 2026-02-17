@@ -183,16 +183,31 @@ Defina internamente cada ponto abaixo:
 - Incluir seção de projetos?
 - Se sim: quais projetos do histórico têm maior relevância para esta vaga?
 
-**e) Certificações e Formação**
-- Incluir apenas certificações, educação, formações e escolaridade que reforçam o match com a vaga
-- Omitir certificações, educação, formações e escolaridade irrelevantes ou muito antigas
-- Formação: incluir apenas se relevante (cursos técnicos/superiores na área alvo)
+**e) Formação Acadêmica**
 
-**f) Idiomas**
+Critérios de INCLUSÃO — incluir apenas se atender ao menos um:
+- Graduação ou pós-graduação em área de TI ou correlata (Ciência da Computação, Engenharia de Software, Sistemas de Informação, etc.)
+- Curso técnico diretamente relacionado à área da vaga (ex: Técnico em Informática para vaga de desenvolvimento)
+- Bootcamp ou curso intensivo reconhecido na área de tecnologia com carga horária relevante (ex: Full Cycle, Alura, Rocketseat formações longas)
+
+Critérios de EXCLUSÃO — omitir sempre que:
+- Curso técnico de área completamente diferente da vaga (ex: Técnico em Eletrônica, Técnico em Administração para vagas de TI)
+- Formação de ensino médio sem relevância técnica
+- Cursos muito antigos (>10 anos) de áreas não relacionadas
+- Qualquer formação que não agregue credibilidade para a vaga específica
+
+**Regra prática de formação:** se um recrutador de TI visse essa formação no currículo, ela geraria valor ou ruído? Se ruído → omitir.
+
+**f) Certificações**
+- Incluir apenas certificações que reforçam o match com a vaga (ex: AWS para vaga cloud, certificações ágeis para vaga com Scrum)
+- Omitir certificações de áreas completamente não relacionadas à vaga
+- Omitir certificações muito antigas se a tecnologia evoluiu e não houve renovação
+
+**g) Idiomas**
 - Incluir apenas idiomas que têm relevância para a vaga
 - Omitir idiomas com nível básico que não agregam
 
-**g) Tratamento de Gaps**
+**h) Tratamento de Gaps**
 Para cada gap identificado na Etapa 2, decida internamente:
 - Usar tecnologia similar/do mesmo ecossistema como ponte
 - Contextualizar experiência de forma que minimize o gap

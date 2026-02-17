@@ -6,7 +6,17 @@ import uuid
 from datetime import datetime
 from urllib.parse import urlparse
 
-PORT = 8230
+# Importar extrator de vagas (com fallback se dependências não instaladas)
+try:
+    import sys, os
+    sys.path.insert(0, os.path.join(os.getcwd(), 'core'))
+    from job_extractor import extrair_vaga
+    EXTRATOR_DISPONIVEL = True
+except ImportError as e:
+    EXTRATOR_DISPONIVEL = False
+    print(f"Aviso: job_extractor não disponível ({e}). Instale: pip install requests beautifulsoup4")
+
+PORT = 8232
 ROOT_DIR = os.getcwd()
 DATA_DIR = os.path.join(ROOT_DIR, 'data')
 VAGAS_FILE = os.path.join(DATA_DIR, 'vagas.json')
@@ -67,6 +77,8 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         elif path.startswith('/api/curriculo/'):
             vaga_id = path.split('/')[-1]
             self.save_curriculo(vaga_id, body)
+        elif path == '/api/extrair-vaga':
+            self.extrair_vaga_url(body)
         else:
             self.send_response(404)
             self.end_headers()
@@ -222,6 +234,26 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as e:
             print('Erro ao excluir currículo:', e)
             self.send_error(500, str(e))
+
+    def extrair_vaga_url(self, body):
+        if not EXTRATOR_DISPONIVEL:
+            self.send_json_response({
+                "sucesso": False,
+                "erro": "Dependências não instaladas. Execute: pip install requests beautifulsoup4"
+            }, 503)
+            return
+        try:
+            data = json.loads(body)
+            url = data.get('url', '').strip()
+            if not url:
+                self.send_json_response({"sucesso": False, "erro": "URL não informada."}, 400)
+                return
+            print(f'Extraindo vaga de: {url}')
+            resultado = extrair_vaga(url)
+            self.send_json_response(resultado)
+        except Exception as e:
+            print(f'Erro ao extrair vaga: {e}')
+            self.send_json_response({"sucesso": False, "erro": str(e)}, 500)
 
     def log_message(self, format, *args):
         # Log mais limpo no terminal

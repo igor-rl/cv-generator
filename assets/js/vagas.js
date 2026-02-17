@@ -118,6 +118,62 @@ function existeCurriculo(vagaUUID) {
 
 // =============== MODAIS DE VAGA ===============
 
+// =============== EXTRATOR DE VAGA POR URL ===============
+
+async function extrairVagaUrl() {
+    const url = document.getElementById('modal_url_vaga').value.trim();
+    if (!url) {
+        showModalStatus('statusExtracao', 'error', 'Cole uma URL do LinkedIn ou Indeed.');
+        return;
+    }
+
+    const btn = document.getElementById('btnExtrair');
+    const statusEl = document.getElementById('statusExtracao');
+
+    // Estado de carregamento
+    btn.disabled = true;
+    btn.textContent = '⏳ Extraindo...';
+    statusEl.className = 'status';
+    statusEl.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/extrair-vaga', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+
+        const dados = await res.json();
+
+        if (dados.sucesso) {
+            // Preencher campos com os dados extraídos
+            if (dados.empresa) document.getElementById('modal_empresa').value = dados.empresa;
+            if (dados.cargo)   document.getElementById('modal_cargo').value   = dados.cargo;
+            if (dados.descricao) document.getElementById('modal_descricao').value = dados.descricao;
+
+            if (dados.parcial) {
+                // Extração parcial — avisar campos que faltam
+                showModalStatus('statusExtracao', 'error',
+                    `⚠️ Extração parcial (${dados.plataforma}). ${dados.erro}`);
+            } else {
+                showModalStatus('statusExtracao', 'success',
+                    `✅ Dados extraídos com sucesso do ${dados.plataforma}! Revise e salve.`);
+            }
+        } else {
+            // Falhou completamente
+            showModalStatus('statusExtracao', 'error',
+                `❌ ${dados.erro || 'Não foi possível extrair os dados. Preencha manualmente.'}`);
+        }
+    } catch (err) {
+        showModalStatus('statusExtracao', 'error',
+            '❌ Erro de conexão com o servidor. Verifique se o server.py está rodando.');
+        console.error('Erro ao extrair vaga:', err);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Extrair';
+    }
+}
+
 function openNovaVagaModal() {
     document.getElementById('novaVagaModal').style.display = 'flex';
     document.getElementById('modal_empresa').value = '';
@@ -259,55 +315,23 @@ async function gerarPromptVaga(uuid) {
 
     try {
         const timestamp = new Date().getTime();
-        const [
-            historyRes, masterPromptRes,
-            fase1Res, fase2Res, fase3Res, fase4Res, fase5Res,
-            eligibilitySchemaRes, finalOutputSchemaRes
-        ] = await Promise.all([
+        const [historyRes, masterPromptRes] = await Promise.all([
             fetch(`/data/personal-history.md?t=${timestamp}`),
-            fetch(`/core/prompts/master-prompt.md?t=${timestamp}`),
-            fetch(`/core/prompts/fase1.md?t=${timestamp}`),
-            fetch(`/core/prompts/fase2.md?t=${timestamp}`),
-            fetch(`/core/prompts/fase3.md?t=${timestamp}`),
-            fetch(`/core/prompts/fase4.md?t=${timestamp}`),
-            fetch(`/core/prompts/fase5.md?t=${timestamp}`),
-            fetch(`/core/contracts/elegibility.schema.json?t=${timestamp}`),
-            fetch(`/core/contracts/final-output.schema.json?t=${timestamp}`)
+            fetch(`/core/prompts/master-prompt.md?t=${timestamp}`)
         ]);
+
+        if (!historyRes.ok) throw new Error('Histórico profissional não encontrado. Salve seus dados na aba "Meus Dados" primeiro.');
+        if (!masterPromptRes.ok) throw new Error('Arquivo master-prompt.md não encontrado.');
 
         const history = await historyRes.text();
         let masterPrompt = await masterPromptRes.text();
-        const fase1 = await fase1Res.text();
-        const fase2 = await fase2Res.text();
-        const fase3 = await fase3Res.text();
-        const fase4 = await fase4Res.text();
-        const fase5 = await fase5Res.text();
-        const eligibilitySchema = await eligibilitySchemaRes.text();
-        const finalOutputSchema = await finalOutputSchemaRes.text();
+
+        if (!history.trim()) throw new Error('Histórico profissional está vazio. Preencha seus dados na aba "Meus Dados" primeiro.');
 
         masterPrompt = masterPrompt.replace('{{PROFESSIONAL_HISTORY}}', history);
         masterPrompt = masterPrompt.replace('{{JOB_DESCRIPTION}}', vaga.descricao);
-        masterPrompt = masterPrompt.replace('{{FASE_1}}', fase1);
-        masterPrompt = masterPrompt.replace('{{FASE_2}}', fase2);
-        masterPrompt = masterPrompt.replace('{{FASE_3}}', fase3);
-        masterPrompt = masterPrompt.replace('{{FASE_4}}', fase4);
-        masterPrompt = masterPrompt.replace('{{FASE_5}}', fase5);
-        masterPrompt = masterPrompt.replace(/{{ELEGIBILITY_SCHEMA}}/g, eligibilitySchema);
-        masterPrompt = masterPrompt.replace(/{{FINAL_OUTPUT_SCHEMA}}/g, finalOutputSchema);
-        masterPrompt = masterPrompt.replace(/seguindo o schema `elegibility\.schema\.json`/g,
-            `seguindo este schema:\n\`\`\`json\n${eligibilitySchema}\n\`\`\``);
-        masterPrompt = masterPrompt.replace(/seguindo o schema `final-output\.schema\.json`/g,
-            `seguindo este schema:\n\`\`\`json\n${finalOutputSchema}\n\`\`\``);
-        masterPrompt = masterPrompt.replace(/### INFORMAÇÕES PESSOAIS DO CANDIDATO:[\s\S]*?```json[\s\S]*?{{PERSONAL_DATA}}[\s\S]*?```/g, '');
 
-        const promptFinal = `# GERAÇÃO DE CURRÍCULO ESTRATÉGICO
-# Data: ${new Date().toLocaleDateString('pt-BR')}
-# Vaga: ${vaga.cargo} - ${vaga.empresa}
-
-IMPORTANTE: Este prompt contém todos os arquivos necessários já renderizados.
-Não há necessidade de buscar arquivos externos.
-
-${masterPrompt}`;
+        const promptFinal = masterPrompt;
 
         document.getElementById('generatedPrompt').textContent = promptFinal;
         document.getElementById('promptModal').style.display = 'flex';
