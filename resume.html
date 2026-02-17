@@ -14,11 +14,15 @@
     </div>
 
     <div class="actions-bar">
-        <button onclick="window.print()" class="btn">🖨️ Imprimir / Salvar PDF</button>
-        <button onclick="window.close()" class="btn">← Voltar</button>
+        <button type="button" onclick="imprimirCurriculo(); return false;" class="btn">🖨️ Imprimir / Salvar PDF</button>
+        <button type="button" onclick="window.close(); return false;" class="btn">← Voltar</button>
     </div>
 
     <script>
+        // Variáveis globais para armazenar dados
+        let resumeDataGlobal = null;
+        let personalDataGlobal = null;
+
         // Load resume from sessionStorage and render
         document.addEventListener('DOMContentLoaded', () => {
             const resumeData = sessionStorage.getItem('current_resume');
@@ -35,17 +39,82 @@
             }
             
             try {
-                const data = JSON.parse(resumeData);
-                renderResume(data);
+                resumeDataGlobal = JSON.parse(resumeData);
+                personalDataGlobal = resumeDataGlobal.personalData || {};
+
+                console.log(resumeDataGlobal)
+                
+                // --- NOVO: Atualizar título da página ---
+                const empresa = resumeDataGlobal.vaga_alvo?.empresa || '';
+                const headline = resumeDataGlobal.header?.headline || 'Desenvolvedor';
+                const nomeCompleto = personalDataGlobal.name || '';
+
+                // Criar string do title
+                let titleString = `${empresa} | ${headline} | ${nomeCompleto}`;
+
+                // Regras: minúsculo, espaços → _, prefixo cv_
+                titleString = 'cv ' + titleString
+                    .toLowerCase()
+                    .trim()
+
+                document.title = titleString;
+                // --- FIM NOVO ---
+                
+                if (Object.keys(personalDataGlobal).length === 0) {
+                    const timestamp = new Date().getTime();
+                    fetch(`/data/personal-data.json?t=${timestamp}`)
+                        .then(res => res.json())
+                        .then(personalData => {
+                            personalDataGlobal = personalData;
+                            renderResume(resumeDataGlobal, personalData);
+                        })
+                        .catch(err => renderResume(resumeDataGlobal, {}));
+                } else {
+                    renderResume(resumeDataGlobal, personalDataGlobal);
+                }
             } catch (error) {
+                console.error('Erro ao processar currículo:', error);
                 alert('Erro ao carregar currículo: ' + error.message);
             }
         });
 
-        function renderResume(data) {
+        function imprimirCurriculo() {
+            // Garantir que os dados estão carregados antes de imprimir
+            if (!resumeDataGlobal || !document.getElementById('resumeContent').innerHTML) {
+                alert('Aguarde o currículo carregar completamente antes de imprimir.');
+                return;
+            }
+            
+            // Salvar posição atual do scroll
+            const scrollPos = window.scrollY;
+            
+            // Usar timeout para garantir que a página está renderizada
+            setTimeout(() => {
+                window.print();
+                
+                // Restaurar posição do scroll após impressão
+                setTimeout(() => {
+                    window.scrollTo(0, scrollPos);
+                }, 100);
+            }, 100);
+            
+            // Prevenir qualquer ação que possa resetar a página
+            return false;
+        }
+        
+        // Prevenir que o evento de impressão cause scroll
+        window.addEventListener('beforeprint', (e) => {
+            document.body.style.overflow = 'visible';
+        });
+        
+        window.addEventListener('afterprint', (e) => {
+            document.body.style.overflow = 'auto';
+        });
+
+        function renderResume(data, personalData) {
             function formatPeriod(period) {
                 if (!period) return '';
-                if (typeof period === 'string') return period; // Já formatado como "2025–Atual"
+                if (typeof period === 'string') return period;
                 const start = period.start ? formatDate(period.start) : '';
                 const end = period.end === 'current' ? 'Atual' : (period.end ? formatDate(period.end) : '');
                 return `${start} – ${end}`;
@@ -59,31 +128,81 @@
                 return `${months[parseInt(month) - 1]} ${year}`;
             }
 
-            // Adaptar estrutura do header (aceitar múltiplos formatos)
+            // Usar personalData se existir, senão tentar do data
+            const personal = personalData || data.personalData || {};
+            
+            console.log('Personal data na renderização:', personal);
+
+            // Verificar quais campos incluir baseado nas checkboxes
+            const shouldInclude = (field) => {
+                const includeField = `include_${field}`;
+                // Se o campo não existe em personal, retornar true (default)
+                if (personal[includeField] === undefined) return true;
+                return personal[includeField] === true;
+            };
+
+            // Adaptar estrutura do header
             const header = data.header || data;
             const meta = data.meta || {};
-            const name = header.nome || header.name || 'Nome não informado';
+            
+            // Pegar dados pessoais com fallback
+            const name = shouldInclude('name') ? (personal.name || header.nome || header.name || '') : '';
+            const email = shouldInclude('email') ? (personal.email || header.email || '') : '';
+            const phone = shouldInclude('phone') ? (personal.phone || header.telefone || header.phone || '') : '';
+            const linkedin = shouldInclude('linkedin') ? (personal.linkedin || header.linkedin || '') : '';
+            const github = shouldInclude('github') ? (personal.github || header.github || '') : '';
+            const portfolio = shouldInclude('portfolio') ? (personal.portfolio || header.portfolio || '') : '';
+            
             const headline = meta.cargo_alvo || header.headline || 'Desenvolvedor';
-            const email = header.email;
-            const phone = header.telefone || header.phone;
-            const linkedin = header.linkedin;
-            const github = header.github;
-            const portfolio = header.portfolio;
-            const location = header.localizacao || (header.location ? `${header.location.city}, ${header.location.state}` : '');
+            
+            // Construir location string
+            let location = '';
+            const showCity = shouldInclude('city');
+            const showState = shouldInclude('state');
+            
+            if (showCity || showState) {
+                const city = showCity ? (personal.city || '') : '';
+                const state = showState ? (personal.state || '') : '';
+                if (city && state) {
+                    location = `${city}, ${state}`;
+                } else if (city) {
+                    location = city;
+                } else if (state) {
+                    location = state;
+                }
+            }
+            
+            const showRemote = shouldInclude('remote') && (personal.remote === true);
+
+            console.log('Dados renderizados:', { name, email, phone, linkedin, github, portfolio, location });
 
             const html = `
                 <div class="resume-header">
-                    <h1 class="name">${name}</h1>
+                    ${name ? `<h1 class="name">${name}</h1>` : ''}
                     <div class="headline">${headline}</div>
-                    <div class="contact-info">
-                        ${email ? `<span>e-mail: ${email}</span>` : ''} |
-                        ${phone ? `<span>celular e WhatsApp: ${phone}</span>` : ''}
-                    </div>
-                    <div class="contact-info">
-                        ${linkedin ? `<span>Linkedin: ${linkedin.replace('https://', '').replace('http://', '')}</span>` : ''} |
-                        ${github ? `<span>GitHub: ${github.replace('https://', '').replace('http://', '')}</span>` : ''} |
-                        ${portfolio ? `<span>Portifólio: ${portfolio.replace('https://', '').replace('http://', '')}</span>` : ''}
-                    </div>
+                    ${email || phone ? `
+                        <div class="contact-info">
+                            ${email ? `<span>e-mail: ${email}</span>` : ''}
+                            ${email && phone ? ' | ' : ''}
+                            ${phone ? `<span>celular e WhatsApp: ${phone}</span>` : ''}
+                        </div>
+                    ` : ''}
+                    ${linkedin || github || portfolio ? `
+                        <div class="contact-info">
+                            ${linkedin ? `<span>LinkedIn: ${linkedin.replace('https://', '').replace('http://', '')}</span>` : ''}
+                            ${linkedin && (github || portfolio) ? ' | ' : ''}
+                            ${github ? `<span>GitHub: ${github.replace('https://', '').replace('http://', '')}</span>` : ''}
+                            ${github && portfolio ? ' | ' : ''}
+                            ${portfolio ? `<span>Portfólio: ${portfolio.replace('https://', '').replace('http://', '')}</span>` : ''}
+                        </div>
+                    ` : ''}
+                    ${location || showRemote ? `
+                        <div class="contact-info">
+                            ${location ? `<span>${location}</span>` : ''}
+                            ${location && showRemote ? ' | ' : ''}
+                            ${showRemote ? '<span>Disponível para trabalho remoto</span>' : ''}
+                        </div>
+                    ` : ''}
                 </div>
 
                 ${data.summary ? `
@@ -129,15 +248,11 @@
                     <div class="section">
                         <h2 class="section-title">EXPERIÊNCIA PROFISSIONAL</h2>
                         ${data.experience.map(exp => {
-                            // Adaptar para múltiplos formatos
                             const role = exp.role || exp.projeto || exp.position || 'Desenvolvedor';
                             const company = exp.company || exp.empresa || '';
                             const period = exp.periodo || formatPeriod(exp.period);
                             
-                            // Aceitar tanto "highlights" quanto "descricao"
                             let highlights = exp.highlights || exp.descricao || exp.description || [];
-                            
-                            // Se for string, converter para array
                             if (typeof highlights === 'string') {
                                 highlights = [highlights];
                             }
@@ -151,7 +266,6 @@
                                     </div>
                                     <div class="exp-period">${period}</div>
                                 </div>
-                                ${exp.location || exp.localizacao ? `<div class="exp-location">${exp.location || exp.localizacao}</div>` : ''}
                                 ${highlights && highlights.length > 0 ? `
                                     <ul class="highlights">
                                         ${highlights.map(h => `<li>${h}</li>`).join('')}

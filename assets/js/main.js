@@ -19,22 +19,25 @@ function switchTab(tabName) {
 async function loadFromServer() {
     try {
         const personalRes = await fetch('/data/personal-data.json');
-        const historyRes = await fetch('/data/personal-history.md');
+        const curriculoRes = await fetch('/data/curriculo.json'); // se tiver um arquivo JSON do currículo
+        const vagaRes = await fetch('/data/vaga-alvo.json'); // ou vem junto com curriculo.json
 
         const personal = personalRes.ok ? await personalRes.json() : {};
-        const history = historyRes.ok ? await historyRes.text() : '';
+        const curriculo = curriculoRes.ok ? await curriculoRes.json() : {};
+        const vaga = vagaRes.ok ? await vagaRes.json() : {};
 
-        Object.keys(personal).forEach(k => {
-            const el = document.getElementById(k);
-            if (el) el.type === 'checkbox' ? el.checked = personal[k] : el.value = personal[k];
-        });
-
-        if (history) document.getElementById('history').value = history;
+        // Salvar tudo no sessionStorage
+        sessionStorage.setItem('current_resume', JSON.stringify({
+            personalData: personal,
+            curriculo: curriculo,
+            vaga_alvo: vaga
+        }));
 
     } catch (err) {
         console.error('Erro ao carregar dados do servidor:', err);
     }
 }
+
 
 async function saveData() {
     const personal = {
@@ -46,7 +49,17 @@ async function saveData() {
         remote: document.getElementById('remote').checked,
         linkedin: document.getElementById('linkedin').value.trim(),
         github: document.getElementById('github').value.trim(),
-        portfolio: document.getElementById('portfolio').value.trim()
+        portfolio: document.getElementById('portfolio').value.trim(),
+        // Incluir flags de quais campos devem aparecer no currículo
+        include_name: document.getElementById('include_name').checked,
+        include_email: document.getElementById('include_email').checked,
+        include_phone: document.getElementById('include_phone').checked,
+        include_city: document.getElementById('include_city').checked,
+        include_state: document.getElementById('include_state').checked,
+        include_remote: document.getElementById('include_remote').checked,
+        include_linkedin: document.getElementById('include_linkedin').checked,
+        include_github: document.getElementById('include_github').checked,
+        include_portfolio: document.getElementById('include_portfolio').checked
     };
 
     const history = document.getElementById('history').value.trim();
@@ -77,35 +90,11 @@ async function saveData() {
         if (!resHistory.ok) throw new Error('Erro ao salvar history');
 
         showStatus('success', '✅ Dados salvos com sucesso!');
-        await loadFromServer(); // <--- Recarrega a tela com os dados atualizados
+        await loadFromServer();
     } catch (err) {
         console.error(err);
         showStatus('error', '❌ Erro ao salvar dados');
     }
-}
-
-
-
-function loadSampleData() {
-    const sample = {
-        personal: { name: 'João Silva', email: 'joao@email.com', phone: '', city: '', state: '', remote: false, linkedin: '', github: '', portfolio: '' },
-        history: '## Experiência Profissional\n\n### Empresa X - Cargo\n- Responsabilidades...'
-    };
-    Object.keys(sample.personal).forEach(k => {
-        const el = document.getElementById(k);
-        if (el) el.type==='checkbox'?el.checked=sample.personal[k]:el.value=sample.personal[k];
-    });
-    document.getElementById('history').value = sample.history;
-    showStatus('success', '✅ Dados de exemplo carregados!');
-}
-
-function clearAllData() {
-    if (!confirm('Deseja apagar todos os dados?')) return;
-    ['name','email','phone','city','state','remote','linkedin','github','portfolio','history'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.type==='checkbox'?el.checked=false:el.value='';
-    });
-    showStatus('success','✅ Todos os dados foram apagados.');
 }
 
 function showStatus(type, msg) {

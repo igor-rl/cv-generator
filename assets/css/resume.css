@@ -190,19 +190,23 @@ body {
 .project-impact {
   list-style: none;
   font-size: 13px;
+  margin-top: 10px;
 }
 
 .project-impact li {
-  padding-left: 18px;
+  padding-left: 20px;
+  margin-bottom: 6px;
   position: relative;
-  color: #059669;
-  margin-bottom: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #374151;
 }
 
 .project-impact li::before {
-  content: '✓';
+  content: '•';
   position: absolute;
   left: 0;
+  color: #1e40af;
   font-weight: bold;
 }
 
@@ -258,8 +262,6 @@ body {
   box-shadow: 0 6px 8px -1px rgb(0 0 0 / 0.15);
 }
 
-/* ================= PRINT AJUSTADO ================= */
-
 /* ================= PRINT CORRIGIDO ================= */
 
 @media print {
@@ -270,7 +272,7 @@ body {
   }
 
   body {
-    background: white;
+    background: white !important;
     font-size: 10.8pt;
     line-height: 1.35;
   }
@@ -279,10 +281,14 @@ body {
     box-shadow: none;
     margin: 0;
     max-width: 100%;
+    background: white !important;
   }
 
   .resume-content {
     padding: 0;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .name {
@@ -320,6 +326,20 @@ body {
   .section,
   .experience-item {
     page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  /* Evitar que títulos fiquem sozinhos no final da página */
+  .section-title {
+    page-break-after: avoid;
+  }
+
+  /* 🔥 OCULTAR BOTÕES NA IMPRESSÃO */
+  .actions-bar,
+  .btn,
+  button {
+    display: none !important;
+    visibility: hidden !important;
     break-inside: auto;
   }
 
