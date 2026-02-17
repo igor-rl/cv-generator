@@ -1,225 +1,166 @@
-# Sistema de Geração Estratégica de Currículos
+# Sistema de Currículos Estratégicos — PWA
 
-Sistema completo para gerenciamento de vagas e geração automatizada de currículos personalizados usando IA.
+Versão **offline-first**, instalável como app nativo em qualquer dispositivo.
 
-## 🚀 Funcionalidades
+---
 
-- **Gerenciamento de Dados Pessoais**: Armazene suas informações profissionais com controle granular sobre o que incluir em cada currículo
-- **Gerenciamento de Vagas**: Cadastre, edite e acompanhe o status de vagas de interesse
-- **Geração Automática de Prompt**: Crie prompts personalizados combinando seu histórico profissional com a descrição da vaga
-- **Análise de Elegibilidade**: Receba avaliação automática de compatibilidade com a vaga (1-5 estrelas)
-- **Currículos Estratégicos**: Gere currículos otimizados para cada vaga específica
-- **Visualização e Impressão**: Visualize e exporte currículos em PDF profissional
+## 🚀 Instalação Rápida
 
-## 📋 Pré-requisitos
+### Opção 1 — Servir localmente (desenvolvimento)
 
-- Python 3.12+
-- Navegador web moderno
-
-## 🛠️ Instalação
-
-1. Clone o repositório:
 ```bash
-git clone [seu-repositório]
-cd [diretório-do-projeto]
+# Python (sem dependências extras)
+python3 -m http.server 8000
+
+# Node.js
+npx serve .
+
+# Depois abra:
+# http://localhost:8000
 ```
 
-2. Inicie o servidor:
-```bash
-python server.py
-```
+> ⚠️ O Service Worker requer HTTPS **ou** `localhost`. Não funciona via `file://`.
 
-3. Acesse no navegador:
-```
-http://localhost:8000
-```
+### Opção 2 — Deploy gratuito (produção)
 
-## 📖 Como Usar
+Faça upload da pasta para qualquer host estático:
 
-### 1. Configure Seus Dados
+| Plataforma | Comando |
+|---|---|
+| **Vercel** | `npx vercel` |
+| **Netlify** | Arraste a pasta para netlify.com |
+| **GitHub Pages** | Push + ativar Pages nas configurações |
+| **Cloudflare Pages** | `npx wrangler pages deploy .` |
 
-**Aba "Meus Dados":**
-- Preencha suas informações pessoais
-- Marque as checkboxes dos campos que deseja incluir nos currículos
-- Cole seu histórico profissional completo em Markdown
-- Clique em "Salvar Dados"
+---
 
-**Formato do Histórico Profissional:**
-```markdown
-## EXPERIÊNCIA PROFISSIONAL
+## 📲 Como Instalar como App
 
-### Empresa XYZ - Desenvolvedor Senior | Jan 2022 - Atual
+### iPhone / iPad
+1. Abra no **Safari** (obrigatório)
+2. Toque em **Compartilhar** → **Adicionar à Tela de Início**
+3. Confirme o nome e toque **Adicionar**
 
-**Stack:** Node.js, TypeScript, PostgreSQL, AWS
+### Android (Chrome)
+1. Abra no **Chrome**
+2. Toque no banner **"Instalar"** que aparece automaticamente
+3. Ou: menu ⋮ → **Adicionar à tela inicial**
 
-**Responsabilidades:**
-- Desenvolvimento de APIs REST
-- Arquitetura de microsserviços
+### Mac / Windows / Linux (Chrome ou Edge)
+1. Acesse a URL no navegador
+2. Clique no ícone **⊕** na barra de endereços
+3. Ou: menu → **Instalar app**
 
-**Métricas:**
-- Redução de 60% na latência
-- Processamento de 50M req/mês
-```
-
-### 2. Gerencie Vagas
-
-**Aba "Vagas":**
-- Clique em "Nova Vaga" para cadastrar uma oportunidade
-- Preencha: Empresa, Cargo e Descrição completa da vaga
-- Filtre vagas por status (Criada, Aplicada, Em Entrevista, etc.)
-- Edite informações e atualize status conforme necessário
-
-### 3. Gere Currículos
-
-**Para cada vaga:**
-
-1. **Clique em "Gerar Currículo"**
-   - O sistema cria um prompt personalizado
-   - Copie o prompt completo
-
-2. **Use o ChatGPT**
-   - Cole o prompt no ChatGPT
-   - Aguarde a geração do JSON completo
-
-3. **Cole a Resposta**
-   - Clique em "Próxima Etapa"
-   - Cole o JSON retornado pelo ChatGPT
-   - Clique em "Gerar Currículo"
-
-4. **Visualize e Baixe**
-   - Veja a análise de elegibilidade
-   - Visualize o currículo renderizado
-   - Imprima ou salve como PDF
-   - Baixe o JSON para backup
-
-## 📂 Estrutura de Diretórios
-
-```
-.
-├── assets/
-│   ├── css/
-│   │   ├── main.css        # Estilos principais
-│   │   └── resume.css      # Estilos do currículo
-│   └── js/
-│       ├── main.js         # Gerenciamento de dados pessoais
-│       └── vagas.js        # Gerenciamento de vagas e currículos
-├── core/
-│   ├── contracts/          # Schemas JSON
-│   │   ├── elegibility.schema.json
-│   │   ├── final-output.schema.json
-│   │   ├── personal-history.schema.json
-│   │   └── personal-info.schema.json
-│   └── prompts/           # Prompts do sistema
-│       ├── master-prompt.md
-│       ├── fase1.md
-│       ├── fase2.md
-│       ├── fase3.md
-│       ├── fase4.md
-│       └── fase5.md
-├── data/                  # Dados do usuário (criado automaticamente)
-│   ├── personal-data.json
-│   ├── personal-history.md
-│   ├── vagas.json
-│   └── curriculos/        # Currículos gerados
-│       └── [uuid].json
-├── index.html            # Interface principal
-├── resume.html          # Visualizador de currículo
-├── server.py           # Servidor backend
-└── README.md          # Este arquivo
-```
-
-## 🎯 Status de Vagas
-
-- **Criada**: Vaga cadastrada, ainda não aplicada
-- **Aplicada**: Candidatura enviada
-- **Em Entrevista**: Processo seletivo em andamento
-- **Rejeitada**: Candidatura não aceita pela empresa
-- **Desisti**: Candidato desistiu da vaga
-- **Não Passei**: Não aprovado no processo
+---
 
 ## 💾 Armazenamento de Dados
 
-Os dados são armazenados de duas formas:
+Os dados agora ficam **100% no seu dispositivo** via IndexedDB:
 
-1. **Servidor (persistente)**:
-   - `/data/personal-data.json` - Informações pessoais
-   - `/data/personal-history.md` - Histórico profissional
-   - `/data/vagas.json` - Lista de vagas
-   - `/data/curriculos/[uuid].json` - Currículos gerados
+| Dado | Localização anterior | Localização nova |
+|---|---|---|
+| Dados pessoais | `data/personal-data.json` | IndexedDB `personal['data']` |
+| Histórico profissional | `data/personal-history.md` | IndexedDB `history['content']` |
+| Vagas | `data/vagas.json` | IndexedDB `vagas` (store) |
+| Currículos | `data/curriculos/*.json` | IndexedDB `curriculos` (store) |
 
-2. **Browser (cache)**:
-   - localStorage: currículos para acesso rápido
-   - sessionStorage: currículo atual para visualização
+### Backup e Restauração
 
-## 🔒 Privacidade
+Use os botões **Exportar Backup** / **Importar Backup** na aba "Meus Dados" para:
+- Fazer backup antes de trocar de dispositivo
+- Sincronizar entre dispositivos (export → import)
+- Migrar dados do servidor Python para a PWA
 
-- **Dados pessoais NÃO são enviados ao ChatGPT**
-- Apenas o histórico profissional é incluído no prompt
-- Informações pessoais são mescladas localmente durante a renderização
-- Todos os dados ficam no seu computador local
+---
 
-## 🎨 Personalização de Currículos
+## 🔄 Migração do server.py
 
-O sistema gera currículos estratégicos através de 5 fases:
+Se você já tem dados no servidor Python, exporte-os assim:
 
-1. **Confirmação**: Valida dados recebidos
-2. **Análise de Elegibilidade**: Avalia compatibilidade (1-5 ⭐)
-3. **Estratégia**: Define melhor abordagem para o currículo
-4. **Criação**: Gera o currículo otimizado em JSON
-5. **Finalização**: Valida e entrega resultado final
+```python
+# migrate.py — execute uma vez no diretório do projeto antigo
+import json, os, glob
 
-## 🐛 Troubleshooting
-
-**Erro ao salvar dados:**
-- Verifique se o servidor Python está rodando
-- Confirme permissões de escrita no diretório `data/`
-
-**Currículo em branco ao imprimir:**
-- Certifique-se de ter salvado seus dados pessoais
-- Verifique se o JSON do ChatGPT está válido
-- Tente recarregar a página de visualização
-
-**Vaga não aparece:**
-- Verifique o filtro de status selecionado
-- Recarregue a página (F5)
-
-## 📝 Formato do JSON de Saída
-
-O ChatGPT deve retornar um JSON seguindo o schema `final-output.schema.json`:
-
-```json
-{
-  "versao": "1.0.0",
-  "data_geracao": "2025-02-16",
-  "elegibilidade": {
-    "pontuacao_estrelas": 4,
-    "status": "ELEGÍVEL",
-    "pontos_fortes": [...],
-    "pontos_fracos": [...],
-    "recomendacao": "PROSSEGUIR"
-  },
-  "curriculo": {
-    "header": {...},
-    "summary": "...",
-    "core_competencies": {...},
-    "experience": [...],
-    "education": [...],
-    "languages": [...]
-  }
+data = {
+    "version": 1,
+    "exportedAt": "2025-02-17T00:00:00Z",
+    "personal": json.load(open("data/personal-data.json")) if os.path.exists("data/personal-data.json") else None,
+    "history": open("data/personal-history.md").read() if os.path.exists("data/personal-history.md") else "",
+    "vagas": json.load(open("data/vagas.json")) if os.path.exists("data/vagas.json") else [],
+    "curriculos": [
+        {"vaga_uuid": f.split("/")[-1].replace(".json",""), **json.load(open(f))}
+        for f in glob.glob("data/curriculos/*.json")
+    ]
 }
+
+with open("backup-migracao.json", "w") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+
+print("✅ Backup gerado: backup-migracao.json")
+print(f"   {len(data['vagas'])} vagas | {len(data['curriculos'])} currículos")
 ```
 
-## 🤝 Contribuindo
+Execute:
+```bash
+python3 migrate.py
+```
 
-Contribuições são bem-vindas! Sinta-se à vontade para:
-- Reportar bugs
-- Sugerir novas funcionalidades
-- Enviar pull requests
+Depois importe o `backup-migracao.json` na aba "Meus Dados" → **Importar Backup**.
+
+---
+
+## 📂 Estrutura de Arquivos
+
+```
+.
+├── index.html              # App principal
+├── resume.html             # Visualizador de currículo
+├── manifest.json           # PWA manifest
+├── sw.js                   # Service Worker (cache offline)
+├── assets/
+│   ├── css/
+│   │   ├── main.css        # Estilos principais + PWA
+│   │   └── resume.css      # Estilos do currículo
+│   └── js/
+│       ├── db.js           # ★ IndexedDB (substitui server.py)
+│       ├── main.js         # Dados pessoais + backup + install prompt
+│       └── vagas.js        # Vagas e currículos
+├── core/
+│   └── prompts/
+│       └── master-prompt.md
+└── icons/
+    ├── icon-192.png
+    └── icon-512.png
+```
+
+---
+
+## ⚠️ Diferenças vs Versão com Servidor
+
+| Funcionalidade | server.py | PWA |
+|---|---|---|
+| Dados pessoais | JSON no disco | IndexedDB |
+| Vagas | JSON no disco | IndexedDB |
+| Currículos | JSON no disco | IndexedDB |
+| Extração automática de URL | ✅ (scraping Python) | ❌ (requer backend) |
+| Funciona offline | ❌ | ✅ |
+| Instalável como app | ❌ | ✅ |
+| Funciona no iPhone | ❌ | ✅ |
+| Backup/Restore | Manual | Export/Import JSON |
+
+
+---
+
+## 🛠️ Atualização do Cache
+
+Quando fizer mudanças no código, incremente a versão do cache em `sw.js`:
+
+```js
+const CACHE_NAME = 'curriculos-v1.0.1'; // bump aqui
+```
+
+---
 
 ## 📄 Licença
 
-Este projeto é de código aberto e está disponível sob a licença MIT.
-
-## ✨ Créditos
-
-Desenvolvido para facilitar a criação de currículos estratégicos e personalizados usando o poder da IA.
+MIT — Use, modifique e distribua livremente.

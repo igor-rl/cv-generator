@@ -2,411 +2,364 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Geração de Currículos Estratégicos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Currículos">
+<meta name="description" content="Geração estratégica de currículos personalizados com IA">
+
+<title>Currículos Estratégicos</title>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- Icons -->
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <link rel="stylesheet" href="assets/css/main.css">
+
 <style>
-    /* ── Visualizador em iframe ── */
-    .visualizador-modal-content {
-        width: 96vw;
-        max-width: 1050px;
-        height: 92vh;
-        max-height: 92vh;
-        display: flex;
-        flex-direction: column;
-        padding: 0;
-        overflow: hidden;
-    }
-    .visualizador-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--border);
-        background: white;
-        border-radius: 12px 12px 0 0;
-        flex-shrink: 0;
-    }
-    .visualizador-header h2 {
-        font-size: 17px;
-        font-weight: 600;
-        color: var(--text);
-        margin: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 60%;
-    }
-    .visualizador-header .header-actions {
-        display: flex;
-        gap: 10px;
-        flex-shrink: 0;
-    }
-    #resumeIframe {
-        flex: 1;
-        width: 100%;
-        border: none;
-        border-radius: 0 0 12px 12px;
-        background: #f9fafb;
-    }
-
-    /* ── Modal de confirmação ── */
-    .confirm-modal-content {
-        max-width: 440px;
-        text-align: center;
-    }
-    .confirm-icon {
-        font-size: 40px;
-        margin-bottom: 12px;
-    }
-    .confirm-modal-content h3 {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--text);
-        margin-bottom: 10px;
-    }
-    .confirm-modal-content p {
-        color: var(--text-secondary);
-        font-size: 14px;
-        line-height: 1.6;
-        margin-bottom: 24px;
-    }
-    .confirm-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-    }
-
-    /* ── Modal descrição ── */
-    .descricao-modal-content {
-        max-width: 700px;
-    }
-    .descricao-modal-content h2 {
-        margin-bottom: 16px;
-    }
-    #descricaoTexto {
-        white-space: pre-wrap;
-        font-size: 14px;
-        line-height: 1.7;
-        color: var(--text);
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 16px 20px;
-        max-height: 60vh;
-        overflow-y: auto;
-    }
-
-    /* ── Spinner de carregamento no iframe ── */
-    .iframe-loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: var(--text-secondary);
-        font-size: 15px;
-        gap: 10px;
-    }
-    .spinner {
-        width: 22px; height: 22px;
-        border: 3px solid var(--border);
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Botão de copiar no modal de prompt ── */
-    .output-header .btn { font-family: inherit; }
+/* ── Estilos internos página ── */
+body.in-iframe .actions-bar { display: none !important; }
 </style>
 </head>
 <body>
+
+<!-- ── Banner de Instalação PWA ─────────────────────────────────────────── -->
+<div id="installBanner">
+  <span class="install-icon">📲</span>
+  <div class="install-text">
+    <strong>Instalar como app</strong>
+    <span>Funciona offline · iPhone, Android, Mac, Windows</span>
+  </div>
+  <div class="install-actions">
+    <button class="btn-install" onclick="instalarApp()">Instalar</button>
+    <button class="btn-dismiss" onclick="this.closest('#installBanner').style.display='none'">✕</button>
+  </div>
+</div>
+
 <div class="container">
-    <header class="header">
-        <h1>Sistema de Geração de Currículos Estratégicos</h1>
-        <p>Crie currículos otimizados com análise de elegibilidade por IA</p>
-    </header>
+  <header class="header">
+    <h1>🎯 Currículos Estratégicos</h1>
+    <p>Crie currículos otimizados com análise de elegibilidade por IA</p>
+  </header>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="data">📝 Meus Dados</button>
-        <button class="tab-btn" data-tab="vagas">🎯 Vagas</button>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="data">📝 Meus Dados</button>
+    <button class="tab-btn" data-tab="vagas">💼 Vagas</button>
+  </div>
+
+  <!-- ── ABA: Meus Dados ─────────────────────────────────────────────────── -->
+  <div class="tab-content active" id="tab-data">
+    <h2>Meus Dados Profissionais</h2>
+
+    <!-- Backup -->
+    <div class="backup-bar">
+      <span>💾 Seus dados ficam <strong>no seu dispositivo</strong> (IndexedDB). Faça backups regularmente.</span>
+      <button class="btn btn-secondary btn-small" onclick="exportarBackup()">⬇️ Exportar Backup</button>
+      <label class="btn btn-secondary btn-small">
+        ⬆️ Importar Backup
+        <input type="file" accept=".json" style="display:none" onchange="importarBackup(event)">
+      </label>
     </div>
 
-    <!-- ABA MEUS DADOS -->
-    <div class="tab-content active" id="tab-data">
-        <h2>Meus Dados Profissionais</h2>
-        <div class="section">
-            <h3>Informações Pessoais</h3>
-            <p class="help-text">Marque as informações que deseja incluir nos currículos gerados:</p>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_name" checked disabled> Nome Completo *</label>
-                    <input type="text" id="name" placeholder="João Silva Santos">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_email" checked disabled> Email *</label>
-                    <input type="email" id="email" placeholder="joao.silva@email.com">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_phone"> Telefone / WhatsApp</label>
-                    <input type="tel" id="phone" placeholder="+55 (11) 98765-4321">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_city"> Cidade</label>
-                    <input type="text" id="city" placeholder="São Paulo">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_state"> Estado</label>
-                    <input type="text" id="state" placeholder="SP" maxlength="2">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_remote"> Disponível para remoto</label>
-                    <input type="checkbox" id="remote">
-                </div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_linkedin"> LinkedIn</label>
-                    <input type="url" id="linkedin" placeholder="https://linkedin.com/in/seuperfil">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_github"> GitHub</label>
-                    <input type="url" id="github" placeholder="https://github.com/seuusuario">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="include_portfolio"> Portfólio / Site</label>
-                    <input type="url" id="portfolio" placeholder="https://seusite.dev">
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3>Histórico Profissional</h3>
-            <p class="help-text">Este histórico será usado como base para gerar currículos personalizados para cada vaga.</p>
-            <textarea id="history" rows="20" placeholder="Cole seu histórico profissional em Markdown"></textarea>
-        </div>
-
-        <div class="actions">
-            <button class="btn btn-primary" onclick="saveData()">💾 Salvar Dados</button>
-        </div>
-        <div class="status" id="saveStatus"></div>
-    </div>
-
-    <!-- ABA VAGAS -->
-    <div class="tab-content" id="tab-vagas">
-        <h2>Gerenciamento de Vagas</h2>
-        <div class="section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div>
-                    <label style="margin-right: 10px; font-weight: 600;">Filtrar por status:</label>
-                    <select id="statusFilter" onchange="filterVagas()" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
-                        <option value="all">Todas</option>
-                        <option value="criada">Criada</option>
-                        <option value="aplicada">Aplicada</option>
-                        <option value="entrevista">Em Entrevista</option>
-                        <option value="rejeitada">Rejeitada</option>
-                        <option value="desisti">Desisti</option>
-                        <option value="nao_passei">Não Passei</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary" onclick="openNovaVagaModal()">➕ Nova Vaga</button>
-            </div>
-            <div id="vagasList"></div>
-            <div id="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;"></div>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- MODAL: Nova Vaga -->
-<!-- ============================================================ -->
-<div id="novaVagaModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeNovaVagaModal()">&times;</span>
-        <h2>Nova Vaga</h2>
-
-        <!-- Extrator por URL -->
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label style="font-weight:600;margin-bottom:6px;display:block;">🔗 Extrair dados da vaga automaticamente</label>
-            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">Cole o link da vaga do LinkedIn ou Indeed para preencher os campos automaticamente:</p>
-            <div style="display:flex;gap:8px;">
-                <input type="url" id="modal_url_vaga" placeholder="https://www.linkedin.com/jobs/view/... ou https://br.indeed.com/viewjob?..." style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
-                <button class="btn btn-primary" onclick="extrairVagaUrl()" id="btnExtrair" style="white-space:nowrap;flex-shrink:0;">
-                    🔍 Extrair
-                </button>
-            </div>
-            <div id="statusExtracao" class="status" style="margin-top:8px;"></div>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <div style="flex:1;height:1px;background:var(--border);"></div>
-            <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;">ou preencha manualmente</span>
-            <div style="flex:1;height:1px;background:var(--border);"></div>
-        </div>
-
+    <div class="section">
+      <h3>Informações Pessoais</h3>
+      <p class="help-text">Marque as informações que deseja incluir nos currículos gerados:</p>
+      <div class="form-grid">
         <div class="form-group">
-            <label>Empresa *</label>
-            <input type="text" id="modal_empresa" placeholder="Nome da empresa">
+          <label><input type="checkbox" id="include_name" checked disabled> Nome Completo *</label>
+          <input type="text" id="name" placeholder="João Silva Santos" autocomplete="name">
         </div>
         <div class="form-group">
-            <label>Cargo *</label>
-            <input type="text" id="modal_cargo" placeholder="Ex: Desenvolvedor Backend Sênior">
+          <label><input type="checkbox" id="include_email" checked disabled> Email *</label>
+          <input type="email" id="email" placeholder="joao.silva@email.com" autocomplete="email">
         </div>
         <div class="form-group">
-            <label>Descrição da Vaga *</label>
-            <textarea id="modal_descricao" rows="10" placeholder="Cole aqui a descrição completa da vaga"></textarea>
-        </div>
-        <div class="actions">
-            <button class="btn btn-primary" onclick="salvarNovaVaga()">💾 Salvar Vaga</button>
-            <button class="btn btn-secondary" onclick="closeNovaVagaModal()">Cancelar</button>
-        </div>
-        <div class="status" id="modalStatus"></div>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- MODAL: Editar Vaga -->
-<!-- ============================================================ -->
-<div id="editVagaModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeEditVagaModal()">&times;</span>
-        <h2>Editar Vaga</h2>
-        <input type="hidden" id="edit_uuid">
-        <div class="form-group">
-            <label>Empresa *</label>
-            <input type="text" id="edit_empresa">
+          <label><input type="checkbox" id="include_phone"> Telefone / WhatsApp</label>
+          <input type="tel" id="phone" placeholder="+55 (11) 98765-4321" autocomplete="tel">
         </div>
         <div class="form-group">
-            <label>Cargo *</label>
-            <input type="text" id="edit_cargo">
+          <label><input type="checkbox" id="include_city"> Cidade</label>
+          <input type="text" id="city" placeholder="São Paulo" autocomplete="address-level2">
         </div>
         <div class="form-group">
-            <label>Descrição da Vaga *</label>
-            <textarea id="edit_descricao" rows="10"></textarea>
+          <label><input type="checkbox" id="include_state"> Estado</label>
+          <input type="text" id="state" placeholder="SP" maxlength="2" autocomplete="address-level1">
         </div>
         <div class="form-group">
-            <label>Status</label>
-            <select id="edit_status">
-                <option value="criada">Criada</option>
-                <option value="aplicada">Aplicada</option>
-                <option value="entrevista">Em Entrevista</option>
-                <option value="rejeitada">Rejeitada</option>
-                <option value="desisti">Desisti</option>
-                <option value="nao_passei">Não Passei</option>
-            </select>
+          <label><input type="checkbox" id="include_remote"> Disponível para remoto</label>
+          <input type="checkbox" id="remote"> Sim
         </div>
-        <div class="actions">
-            <button class="btn btn-primary" onclick="salvarEdicaoVaga()">💾 Salvar Alterações</button>
-            <button class="btn btn-secondary" onclick="closeEditVagaModal()">Cancelar</button>
-        </div>
-        <div class="status" id="editModalStatus"></div>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- MODAL: Ver Descrição da Vaga -->
-<!-- ============================================================ -->
-<div id="descricaoModal" class="modal" style="display: none;">
-    <div class="modal-content descricao-modal-content">
-        <span class="close" onclick="closeDescricaoModal()">&times;</span>
-        <h2 id="descricaoTitulo">Descrição da Vaga</h2>
-        <pre id="descricaoTexto"></pre>
-        <div class="actions" style="margin-top: 16px;">
-            <button class="btn btn-secondary" onclick="closeDescricaoModal()">Fechar</button>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- MODAL: Gerar Prompt -->
-<!-- ============================================================ -->
-<div id="promptModal" class="modal" style="display: none;">
-    <div class="modal-content modal-large">
-        <span class="close" onclick="closePromptModal()">&times;</span>
-        <h2>Prompt para ChatGPT</h2>
-        <p class="help-text">Copie este prompt e cole no ChatGPT para gerar seu currículo estratégico:</p>
-        <div class="output-box">
-            <div class="output-header">
-                <span>📋 Prompt Completo</span>
-                <button class="btn btn-small" onclick="copyPrompt()">📋 Copiar</button>
-            </div>
-            <pre id="generatedPrompt"></pre>
-        </div>
-        <div class="actions">
-            <button class="btn btn-primary" onclick="avancarParaColarResposta()">➡️ Próxima Etapa: Colar Resposta</button>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- MODAL: Colar / Editar Resposta JSON -->
-<!-- ============================================================ -->
-<div id="respostaModal" class="modal" style="display: none;">
-    <div class="modal-content modal-large">
-        <span class="close" onclick="closeRespostaModal()">&times;</span>
-        <h2 id="respostaModalTitulo">Colar Resposta do ChatGPT</h2>
-        <input type="hidden" id="resposta_vaga_uuid">
-        <p class="help-text" id="respostaModalDescricao">Cole aqui o JSON completo retornado pelo ChatGPT:</p>
+      </div>
+      <div class="form-grid">
         <div class="form-group">
-            <textarea id="jsonResposta" rows="18" placeholder='{ "versao": "1.0.0", "data_geracao": "2025-02-16", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
+          <label><input type="checkbox" id="include_linkedin"> LinkedIn</label>
+          <input type="url" id="linkedin" placeholder="https://linkedin.com/in/seuperfil">
         </div>
-        <div class="actions">
-            <button id="btnGerarCurriculo" class="btn btn-success btn-large" onclick="gerarCurriculo()">✨ Gerar Currículo</button>
-            <button id="btnVoltarPrompt" class="btn btn-secondary" onclick="voltarParaPrompt()">⬅️ Voltar</button>
+        <div class="form-group">
+          <label><input type="checkbox" id="include_github"> GitHub</label>
+          <input type="url" id="github" placeholder="https://github.com/seuusuario">
         </div>
-        <div class="status" id="respostaStatus"></div>
+        <div class="form-group">
+          <label><input type="checkbox" id="include_portfolio"> Portfólio / Site</label>
+          <input type="url" id="portfolio" placeholder="https://seusite.dev">
+        </div>
+      </div>
     </div>
+
+    <div class="section">
+      <h3>Histórico Profissional</h3>
+      <p class="help-text">Cole seu histórico em Markdown — ele será usado como base para todos os currículos.</p>
+      <textarea id="history" rows="20" placeholder="## EXPERIÊNCIA PROFISSIONAL
+
+### Empresa XYZ — Desenvolvedor Senior | Jan 2022 - Atual
+
+**Stack:** Node.js, TypeScript, PostgreSQL, AWS
+
+**Responsabilidades:**
+- Desenvolvimento de APIs REST
+- Arquitetura de microsserviços
+
+**Métricas:**
+- Redução de 60% na latência
+- Processamento de 50M req/mês"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveData()">💾 Salvar Dados</button>
+    </div>
+    <div class="status" id="saveStatus"></div>
+  </div>
+
+  <!-- ── ABA: Vagas ──────────────────────────────────────────────────────── -->
+  <div class="tab-content" id="tab-vagas">
+    <h2>Gerenciamento de Vagas</h2>
+    <div class="section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+          <label style="margin-right:10px;font-weight:600;">Filtrar:</label>
+          <select id="statusFilter" onchange="filterVagas()" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;">
+            <option value="all">Todas</option>
+            <option value="criada">Criada</option>
+            <option value="aplicada">Aplicada</option>
+            <option value="entrevista">Em Entrevista</option>
+            <option value="rejeitada">Rejeitada</option>
+            <option value="desisti">Desisti</option>
+            <option value="nao_passei">Não Passei</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="openNovaVagaModal()">➕ Nova Vaga</button>
+      </div>
+      <div id="vagasList"></div>
+      <div id="pagination"></div>
+    </div>
+  </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- MODAL: Elegibilidade + Ações do Currículo -->
-<!-- ============================================================ -->
-<div id="curriculoModal" class="modal" style="display: none;">
-    <div class="modal-content modal-large">
-        <span class="close" onclick="closeCurriculoModal()">&times;</span>
-        <h2>Análise de Elegibilidade</h2>
-        <div class="section">
-            <div id="eligibilityContent"></div>
-        </div>
-        <div class="actions">
-            <button class="btn btn-success" onclick="abrirVisualizacaoCurriculo()">👁️ Visualizar Currículo</button>
-            <button class="btn btn-primary" onclick="downloadJsonCurriculo()">💾 Baixar JSON</button>
-            <button class="btn btn-secondary" onclick="closeCurriculoModal()">Fechar</button>
-        </div>
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Nova Vaga                                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="novaVagaModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeNovaVagaModal()">&times;</span>
+    <h2>Nova Vaga</h2>
+
+    <!-- Extrator URL (informativo na PWA) -->
+    <div class="form-group" style="margin-bottom:20px;">
+      <label style="display:block;margin-bottom:6px;">🔗 Preencher via URL</label>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
+        Cole o link da vaga do LinkedIn para preencher automaticamente.
+      </p>
+      <div style="display:flex;gap:8px;">
+        <input type="url" id="modal_url_vaga" placeholder="https://www.linkedin.com/jobs/view/…"
+               style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
+        <button class="btn btn-primary btn-small" onclick="extrairVagaUrl()" id="btnExtrair">🔍 Extrair</button>
+      </div>
+      <div id="statusExtracao" class="status" style="margin-top:8px;"></div>
     </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:12px;color:var(--text-secondary);">ou preencha manualmente</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Empresa *</label>
+      <input type="text" id="modal_empresa" placeholder="Nome da empresa">
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Cargo *</label>
+      <input type="text" id="modal_cargo" placeholder="Ex: Desenvolvedor Backend Sênior">
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Descrição da Vaga *</label>
+      <textarea id="modal_descricao" rows="10" placeholder="Cole aqui a descrição completa da vaga"></textarea>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="salvarNovaVaga()">💾 Salvar Vaga</button>
+      <button class="btn btn-secondary" onclick="closeNovaVagaModal()">Cancelar</button>
+    </div>
+    <div class="status" id="modalStatus"></div>
+  </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- MODAL: Visualizador do Currículo (iframe interno) -->
-<!-- ============================================================ -->
-<div id="visualizadorModal" class="modal" style="display: none;">
-    <div class="modal-content visualizador-modal-content">
-        <div class="visualizador-header">
-            <h2 id="visualizadorTitulo">Currículo</h2>
-            <div class="header-actions">
-                <button class="btn btn-primary btn-small" onclick="imprimirDoVisualizador()">🖨️ Imprimir / PDF</button>
-                <button class="btn btn-secondary btn-small" onclick="closeVisualizadorModal()">✕ Fechar</button>
-            </div>
-        </div>
-        <iframe id="resumeIframe" title="Visualizador de Currículo"></iframe>
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Editar Vaga                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="editVagaModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeEditVagaModal()">&times;</span>
+    <h2>Editar Vaga</h2>
+    <input type="hidden" id="edit_uuid">
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Empresa *</label>
+      <input type="text" id="edit_empresa">
     </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Cargo *</label>
+      <input type="text" id="edit_cargo">
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Descrição *</label>
+      <textarea id="edit_descricao" rows="10"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Status</label>
+      <select id="edit_status">
+        <option value="criada">Criada</option>
+        <option value="aplicada">Aplicada</option>
+        <option value="entrevista">Em Entrevista</option>
+        <option value="rejeitada">Rejeitada</option>
+        <option value="desisti">Desisti</option>
+        <option value="nao_passei">Não Passei</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="salvarEdicaoVaga()">💾 Salvar Alterações</button>
+      <button class="btn btn-secondary" onclick="closeEditVagaModal()">Cancelar</button>
+    </div>
+    <div class="status" id="editModalStatus"></div>
+  </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- MODAL: Confirmação genérica -->
-<!-- ============================================================ -->
-<div id="confirmModal" class="modal" style="display: none;">
-    <div class="modal-content confirm-modal-content">
-        <div class="confirm-icon">⚠️</div>
-        <h3 id="confirmTitulo">Confirmar ação</h3>
-        <p id="confirmMensagem">Tem certeza?</p>
-        <div class="confirm-actions">
-            <button id="confirmBtn" class="btn btn-danger">Confirmar</button>
-            <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
-        </div>
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Ver Descrição                                                      -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="descricaoModal" class="modal" style="display:none;">
+  <div class="modal-content descricao-modal-content">
+    <span class="close" onclick="closeDescricaoModal()">&times;</span>
+    <h2 id="descricaoTitulo">Descrição da Vaga</h2>
+    <pre id="descricaoTexto"></pre>
+    <div class="actions" style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeDescricaoModal()">Fechar</button>
     </div>
+  </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Gerar Prompt                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="promptModal" class="modal" style="display:none;">
+  <div class="modal-content modal-large">
+    <span class="close" onclick="closePromptModal()">&times;</span>
+    <h2>Prompt para ChatGPT</h2>
+    <p class="help-text">Copie este prompt e cole no ChatGPT para gerar seu currículo estratégico:</p>
+    <div class="output-box">
+      <div class="output-header">
+        <span>📋 Prompt Completo</span>
+        <button class="btn btn-small btn-secondary" onclick="copyPrompt()">📋 Copiar</button>
+      </div>
+      <pre id="generatedPrompt"></pre>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="avancarParaColarResposta()">➡️ Próxima Etapa</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Colar / Editar JSON                                                -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="respostaModal" class="modal" style="display:none;">
+  <div class="modal-content modal-large">
+    <span class="close" onclick="closeRespostaModal()">&times;</span>
+    <h2 id="respostaModalTitulo">Colar Resposta do ChatGPT</h2>
+    <input type="hidden" id="resposta_vaga_uuid">
+    <p class="help-text" id="respostaModalDescricao">Cole aqui o JSON completo retornado pelo ChatGPT:</p>
+    <div class="form-group">
+      <textarea id="jsonResposta" rows="18"
+        placeholder='{ "versao": "1.0.0", "data_geracao": "2025-02-16", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
+    </div>
+    <div class="actions">
+      <button id="btnGerarCurriculo" class="btn btn-success btn-large" onclick="gerarCurriculo()">✨ Gerar Currículo</button>
+      <button id="btnVoltarPrompt" class="btn btn-secondary" onclick="voltarParaPrompt()">⬅️ Voltar</button>
+    </div>
+    <div class="status" id="respostaStatus"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Elegibilidade + Ações                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="curriculoModal" class="modal" style="display:none;">
+  <div class="modal-content modal-large">
+    <span class="close" onclick="closeCurriculoModal()">&times;</span>
+    <h2>Análise de Elegibilidade</h2>
+    <div class="section">
+      <div id="eligibilityContent"></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-success" onclick="abrirVisualizacaoCurriculo()">👁️ Visualizar Currículo</button>
+      <button class="btn btn-primary" onclick="downloadJsonCurriculo()">💾 Baixar JSON</button>
+      <button class="btn btn-secondary" onclick="closeCurriculoModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Visualizador iframe                                                -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="visualizadorModal" class="modal" style="display:none;">
+  <div class="modal-content visualizador-modal-content">
+    <div class="visualizador-header">
+      <h2 id="visualizadorTitulo">Currículo</h2>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-small" onclick="imprimirDoVisualizador()">🖨️ PDF</button>
+        <button class="btn btn-secondary btn-small" onclick="closeVisualizadorModal()">✕</button>
+      </div>
+    </div>
+    <iframe id="resumeIframe" title="Visualizador de Currículo"></iframe>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Confirmação                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="confirmModal" class="modal" style="display:none;">
+  <div class="modal-content confirm-modal-content">
+    <div class="confirm-icon">⚠️</div>
+    <h3 id="confirmTitulo">Confirmar ação</h3>
+    <p id="confirmMensagem">Tem certeza?</p>
+    <div class="confirm-actions">
+      <button id="confirmBtn" class="btn btn-danger">Confirmar</button>
+      <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts: DB primeiro, depois lógica -->
+<script src="assets/js/db.js"></script>
 <script src="assets/js/main.js"></script>
 <script src="assets/js/vagas.js"></script>
 </body>
