@@ -22,9 +22,6 @@ function openDB() {
       if (!db.objectStoreNames.contains('vagas'))      db.createObjectStore('vagas',      { keyPath: 'uuid' });
       if (!db.objectStoreNames.contains('curriculos')) db.createObjectStore('curriculos', { keyPath: 'vaga_uuid' });
 
-      // v1 legacy store — kept for migration
-      if (!db.objectStoreNames.contains('history'))    db.createObjectStore('history');
-
       // v2 structured history
       if (!db.objectStoreNames.contains('experiences')) {
         const s = db.createObjectStore('experiences', { keyPath: 'id', autoIncrement: true });
@@ -99,13 +96,6 @@ const DB = {
   // ── Personal data ──────────────────────────────────────────────────────
   getPersonal() { return idbGet('personal', 'data'); },
   savePersonal(data) { return idbPut('personal', data, 'data'); },
-
-  // ── Legacy history (markdown) ───────────────────────────────────────────
-  async getHistory() {
-    const val = await idbGet('history', 'content');
-    return val ?? '';
-  },
-  saveHistory(text) { return idbPut('history', text, 'content'); },
 
   // ── Experiences ─────────────────────────────────────────────────────────
   async listExperiences() {
@@ -227,71 +217,11 @@ const DB = {
     return doc !== null;
   },
 
-  // ── Build structured history markdown for prompts ─────────────────────────
-  async buildHistoryMarkdown() {
-    // Prefer legacy history if present and structured history empty
-    const [legacy, exps, edu, certs, langs] = await Promise.all([
-      this.getHistory(),
-      this.listExperiences(),
-      this.listEducation(),
-      this.listCertifications(),
-      this.listLanguages(),
-    ]);
-
-    if (exps.length === 0 && edu.length === 0) {
-      // Fallback to legacy markdown
-      return legacy;
-    }
-
-    let md = '';
-
-    if (exps.length) {
-      md += '## EXPERIÊNCIA PROFISSIONAL\n\n';
-      for (const e of exps) {
-        const period = `${formatDateMD(e.startDate)} – ${e.current ? 'Atual' : formatDateMD(e.endDate)}`;
-        md += `### ${e.company} — ${e.role} | ${period}\n\n`;
-        if (e.location) md += `📍 ${e.location}\n\n`;
-        if (e.stack) md += `**Stack:** ${e.stack}\n\n`;
-        if (e.description) md += `${e.description}\n\n`;
-        md += '\n';
-      }
-    }
-
-    if (edu.length) {
-      md += '## FORMAÇÃO ACADÊMICA\n\n';
-      for (const e of edu) {
-        md += `### ${e.institution} — ${e.degree}\n`;
-        if (e.startDate || e.endDate) md += `${e.startDate || ''} – ${e.endDate || ''}\n`;
-        if (e.notes) md += `${e.notes}\n`;
-        md += '\n';
-      }
-    }
-
-    if (certs.length) {
-      md += '## CERTIFICAÇÕES\n\n';
-      for (const c of certs) {
-        md += `- **${c.name}** — ${c.issuer}${c.date ? ` (${c.date})` : ''}\n`;
-      }
-      md += '\n';
-    }
-
-    if (langs.length) {
-      md += '## IDIOMAS\n\n';
-      for (const l of langs) {
-        md += `- ${l.language}: ${l.proficiency}\n`;
-      }
-      md += '\n';
-    }
-
-    return md.trim() || legacy;
-  },
-
   // ── Backup ────────────────────────────────────────────────────────────────
   async exportBackup() {
-    const [personal, history, vagas, curriculos, experiences, education, certifications, languages] =
+    const [personal, vagas, curriculos, experiences, education, certifications, languages] =
       await Promise.all([
         this.getPersonal(),
-        this.getHistory(),
         this.listVagas(),
         idbGetAll('curriculos'),
         this.listExperiences(),
@@ -302,14 +232,13 @@ const DB = {
     return {
       version: 2,
       exportedAt: new Date().toISOString(),
-      personal, history, vagas, curriculos,
+      personal, vagas, curriculos,
       experiences, education, certifications, languages,
     };
   },
 
   async importBackup(backup) {
     if (backup.personal)      await this.savePersonal(backup.personal);
-    if (backup.history)       await this.saveHistory(backup.history);
     if (backup.vagas)         for (const v of backup.vagas)          await idbPut('vagas', v);
     if (backup.curriculos)    for (const c of backup.curriculos)     await idbPut('curriculos', c);
     if (backup.experiences)   for (const e of backup.experiences)    await idbPut('experiences', e);
