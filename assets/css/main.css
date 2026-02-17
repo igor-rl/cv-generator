@@ -1368,24 +1368,76 @@ body {
   .main-content { margin-left: 0; }
   .mobile-nav { display: block; }
 
+  /* Prevent any horizontal overflow on mobile */
+  .main-content,
+  .page,
+  .vagas-list,
+  .vaga-card {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
   .page {
     padding: 20px 16px;
     padding-bottom: calc(var(--mobile-nav-h) + var(--safe-bottom) + 20px);
+    width: 100%;
   }
 
   .page-title { font-size: 22px; }
 
   .form-grid { grid-template-columns: 1fr; }
 
-  .personal-grid {
-    grid-template-columns: 1fr;
+  .personal-grid { grid-template-columns: 1fr; }
+
+  /* Vaga card mobile fixes */
+  .vaga-card {
+    padding: 14px;
+    border-radius: var(--radius);
   }
 
-  .btn { width: 100%; }
-  .btn-sm { width: auto; }
-  .btn-icon { width: auto; }
+  .vaga-card-header {
+    gap: 8px;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  .vaga-card-title { font-size: 14px; }
+  .vaga-card-empresa { font-size: 12px; }
+
+  .vaga-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .vaga-card-footer > div:first-child {
+    max-width: 100%;
+    white-space: normal;
+    font-size: 11px;
+    line-height: 1.4;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .vaga-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* Only full-width for standalone buttons outside cards/toolbars */
+  .page > .btn { width: 100%; }
+  .page-header .btn { width: auto; }
+  .btn-sm { width: auto !important; }
+  .btn-icon { width: auto !important; }
+  .btn-ghost { width: auto !important; }
   .btn-row { flex-direction: column; }
-  .btn-row .btn-sm { width: auto; }
+  .btn-row .btn { width: 100%; }
+  .btn-row .btn-sm { width: auto !important; }
+
+  /* Modal footer buttons full width only if standalone */
+  .modal-footer .btn { width: auto; flex: 1; }
+  .modal-footer .btn-ghost { flex: 0; }
 
   .modal-overlay {
     padding: 0;
@@ -1418,6 +1470,10 @@ body {
   .home-hero h1 { font-size: 24px; }
 
   .backup-cards { grid-template-columns: 1fr; }
+
+  /* Detail modal actions */
+  #detail_actions { gap: 8px; }
+  #detail_actions .btn { flex: 1 1 auto; min-width: 0; font-size: 13px; padding: 9px 12px; }
 }
 
 @media (min-width: 769px) and (max-width: 1100px) {
