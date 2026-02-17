@@ -3,43 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#0d0f14">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Currículos">
 <meta name="description" content="Geração estratégica de currículos personalizados com IA">
-
 <title>Currículos Estratégicos</title>
-
-<!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json">
-
-<!-- Icons -->
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
-
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/main.css">
-
-<style>
-/* ── Estilos internos página ── */
-body.in-iframe .actions-bar { display: none !important; }
-</style>
 </head>
 <body>
 
-<!-- ── Banner de Instalação PWA ─────────────────────────────────────────── -->
+<!-- ── PWA Banner ─────────────────────────────────────────────────────────── -->
 <div id="installBanner">
-  <span class="install-icon">📲</span>
+  <span>📲</span>
   <div class="install-text">
     <strong>Instalar como app</strong>
-    <span>Funciona offline · iPhone, Android, Mac, Windows</span>
+    <span>Funciona offline · iPhone, Android, Desktop</span>
   </div>
   <div class="install-actions">
     <button class="btn-install" onclick="instalarApp()">Instalar</button>
@@ -47,108 +31,383 @@ body.in-iframe .actions-bar { display: none !important; }
   </div>
 </div>
 
-<div class="container">
-  <header class="header">
-    <h1>🎯 Currículos Estratégicos</h1>
-    <p>Crie currículos otimizados com análise de elegibilidade por IA</p>
-  </header>
+<!-- ── App Layout ──────────────────────────────────────────────────────────── -->
+<div class="app-layout">
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="data">📝 Meus Dados</button>
-    <button class="tab-btn" data-tab="vagas">💼 Vagas</button>
-  </div>
-
-  <!-- ── ABA: Meus Dados ─────────────────────────────────────────────────── -->
-  <div class="tab-content active" id="tab-data">
-    <h2>Meus Dados Profissionais</h2>
-
-    <!-- Backup -->
-    <div class="backup-bar">
-      <span>💾 Seus dados ficam <strong>no seu dispositivo</strong> (IndexedDB). Faça backups regularmente.</span>
-      <button class="btn btn-secondary btn-small" onclick="exportarBackup()">⬇️ Exportar Backup</button>
-      <label class="btn btn-secondary btn-small">
-        ⬆️ Importar Backup
-        <input type="file" accept=".json" style="display:none" onchange="importarBackup(event)">
-      </label>
-    </div>
-
-    <div class="section">
-      <h3>Informações Pessoais</h3>
-      <p class="help-text">Marque as informações que deseja incluir nos currículos gerados:</p>
-      <div class="form-grid">
-        <div class="form-group">
-          <label><input type="checkbox" id="include_name" checked disabled> Nome Completo *</label>
-          <input type="text" id="name" placeholder="João Silva Santos" autocomplete="name">
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="include_email" checked disabled> Email *</label>
-          <input type="email" id="email" placeholder="joao.silva@email.com" autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="include_phone"> Telefone / WhatsApp</label>
-          <input type="tel" id="phone" placeholder="+55 (11) 98765-4321" autocomplete="tel">
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="include_city"> Cidade</label>
-          <input type="text" id="city" placeholder="São Paulo" autocomplete="address-level2">
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="include_state"> Estado</label>
-          <input type="text" id="state" placeholder="SP" maxlength="2" autocomplete="address-level1">
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="include_remote"> Disponível para remoto</label>
-          <input type="checkbox" id="remote"> Sim
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label><input type="checkbox" id="include_linkedin"> LinkedIn</label>
-          <input type="url" id="linkedin" placeholder="https://linkedin.com/in/seuperfil">
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="include_github"> GitHub</label>
-          <input type="url" id="github" placeholder="https://github.com/seuusuario">
-        </div>
-        <div class="form-group">
-          <label><input type="checkbox" id="include_portfolio"> Portfólio / Site</label>
-          <input type="url" id="portfolio" placeholder="https://seusite.dev">
+  <!-- SIDEBAR (desktop) -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">✦</div>
+        <div class="logo-text">
+          Currículos
+          <span>Estratégicos</span>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <h3>Histórico Profissional</h3>
-      <p class="help-text">Cole seu histórico em Markdown — ele será usado como base para todos os currículos.</p>
-      <textarea id="history" rows="20" placeholder="## EXPERIÊNCIA PROFISSIONAL
+    <div class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-item active" data-nav="home">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </span>
+          <span class="nav-label">Início</span>
+        </div>
+      </div>
 
-### Empresa XYZ — Desenvolvedor Senior | Jan 2022 - Atual
+      <div class="nav-section">
+        <div class="nav-section-label">Meu perfil</div>
+        <div class="nav-item" data-nav="profile">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <span class="nav-label">Dados Pessoais</span>
+        </div>
+        <div class="nav-item" data-nav="exp">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </span>
+          <span class="nav-label">Experiências</span>
+        </div>
+        <div class="nav-item" data-nav="edu">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </span>
+          <span class="nav-label">Formação</span>
+        </div>
+        <div class="nav-item" data-nav="certs">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+          </span>
+          <span class="nav-label">Certificações</span>
+        </div>
+        <div class="nav-item" data-nav="langs">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          </span>
+          <span class="nav-label">Idiomas</span>
+        </div>
+      </div>
 
-**Stack:** Node.js, TypeScript, PostgreSQL, AWS
+      <div class="nav-section">
+        <div class="nav-section-label">Vagas</div>
+        <div class="nav-item" data-nav="vagas">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </span>
+          <span class="nav-label">Minhas Vagas</span>
+        </div>
+      </div>
 
-**Responsabilidades:**
-- Desenvolvimento de APIs REST
-- Arquitetura de microsserviços
-
-**Métricas:**
-- Redução de 60% na latência
-- Processamento de 50M req/mês"></textarea>
+      <div class="nav-section">
+        <div class="nav-section-label">Sistema</div>
+        <div class="nav-item" data-nav="backup">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </span>
+          <span class="nav-label">Backup</span>
+        </div>
+      </div>
     </div>
 
-    <div class="actions">
-      <button class="btn btn-primary" onclick="saveData()">💾 Salvar Dados</button>
+    <div class="sidebar-footer">
+      <div class="sidebar-credit">
+        <a href="https://igorlage.vercel.app" target="_blank" rel="noopener">by igorlage</a>
+        <span class="app-version" id="appVersion">v3.0.0</span>
+      </div>
     </div>
-    <div class="status" id="saveStatus"></div>
-  </div>
+  </nav>
 
-  <!-- ── ABA: Vagas ──────────────────────────────────────────────────────── -->
-  <div class="tab-content" id="tab-vagas">
-    <h2>Gerenciamento de Vagas</h2>
-    <div class="section">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: HOME                                                            -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page active" id="page-home">
+      <div class="home-hero">
+        <h1>Currículos <em>estratégicos</em><br>feitos com IA.</h1>
+        <p>Cadastre suas experiências, analise vagas e gere currículos personalizados — tudo no seu dispositivo, sem servidor.</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="navigateTo('vagas')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            Ver Vagas
+          </button>
+          <button class="btn btn-secondary" style="color:white;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);" onclick="navigateTo('profile')">
+            Completar Perfil →
+          </button>
+        </div>
+      </div>
+
+      <div class="home-steps">
+        <div class="home-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Configure seu perfil</h4>
+            <p>Adicione seus dados pessoais, experiências, formação e idiomas.</p>
+          </div>
+        </div>
+        <div class="home-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Cadastre a vaga</h4>
+            <p>Cole a descrição da vaga ou extraia automaticamente de um link do LinkedIn.</p>
+          </div>
+        </div>
+        <div class="home-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Gere o prompt</h4>
+            <p>Copie o prompt gerado e cole no ChatGPT para criar seu currículo estratégico.</p>
+          </div>
+        </div>
+        <div class="home-step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h4>Salve e imprima</h4>
+            <p>Cole a resposta JSON, visualize e imprima o currículo em PDF com um clique.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-tip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         <div>
-          <label style="margin-right:10px;font-weight:600;">Filtrar:</label>
-          <select id="statusFilter" onchange="filterVagas()" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:14px;">
+          <strong>Seus dados ficam 100% no seu dispositivo</strong> via IndexedDB — nenhuma informação é enviada para servidores. Faça backups regulares na aba <strong>Backup</strong>.
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: PROFILE                                                         -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page" id="page-profile">
+      <div class="page-header page-header-row">
+        <div>
+          <h1 class="page-title">Dados Pessoais</h1>
+          <p class="page-subtitle">Informações exibidas no cabeçalho do currículo</p>
+        </div>
+        <button class="btn btn-primary" onclick="ProfileModule.save()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar
+        </button>
+      </div>
+
+      <div class="personal-grid">
+        <!-- Values -->
+        <div class="card personal-values-card">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Informações
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Nome Completo *</label>
+              <input type="text" id="pf_name" class="form-input" placeholder="João Silva Santos" autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email *</label>
+              <input type="email" id="pf_email" class="form-input" placeholder="joao@email.com" autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefone / WhatsApp</label>
+              <input type="tel" id="pf_phone" class="form-input" placeholder="+55 (11) 98765-4321" autocomplete="tel">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cidade</label>
+              <input type="text" id="pf_city" class="form-input" placeholder="São Paulo" autocomplete="address-level2">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado (UF)</label>
+              <input type="text" id="pf_state" class="form-input" placeholder="SP" maxlength="2">
+            </div>
+            <div class="form-group">
+              <label class="form-label">LinkedIn</label>
+              <input type="url" id="pf_linkedin" class="form-input" placeholder="https://linkedin.com/in/...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">GitHub</label>
+              <input type="url" id="pf_github" class="form-input" placeholder="https://github.com/...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Portfólio</label>
+              <input type="url" id="pf_portfolio" class="form-input" placeholder="https://seusite.dev">
+            </div>
+          </div>
+
+          <div class="toggle-group" style="margin-top:8px;">
+            <input type="checkbox" id="pf_remote">
+            <label for="pf_remote" class="form-label" style="margin:0;font-weight:500;">Disponível para trabalho remoto</label>
+          </div>
+        </div>
+
+        <!-- Visibility -->
+        <div class="card personal-visibility-card">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Exibir no currículo
+          </div>
+          <p class="form-hint" style="margin-bottom:14px;">Escolha quais campos aparecem no currículo impresso.</p>
+
+          <div class="visibility-list">
+            <div class="visibility-item">
+              <span class="visibility-item-label">Nome <small style="opacity:.6">(obrigatório)</small></span>
+              <label class="toggle-switch">
+                <input type="checkbox" checked disabled>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">Email <small style="opacity:.6">(obrigatório)</small></span>
+              <label class="toggle-switch">
+                <input type="checkbox" checked disabled>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">Telefone</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="vis_phone" checked>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">Cidade</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="vis_city" checked>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">Estado</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="vis_state" checked>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">Disponível remoto</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="vis_remote" checked>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">LinkedIn</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="vis_linkedin" checked>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">GitHub</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="vis_github" checked>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="visibility-item">
+              <span class="visibility-item-label">Portfólio</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="vis_portfolio" checked>
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="profile-status" class="status-msg"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: EXPERIENCES                                                     -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page" id="page-exp">
+      <div class="page-header page-header-row">
+        <div>
+          <h1 class="page-title">Experiências</h1>
+          <p class="page-subtitle">Histórico profissional ordenado por data</p>
+        </div>
+        <button class="btn btn-primary" onclick="HistoryModule.openNewExperience()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar
+        </button>
+      </div>
+      <div id="exp-list"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: EDUCATION                                                       -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page" id="page-edu">
+      <div class="page-header page-header-row">
+        <div>
+          <h1 class="page-title">Formação Acadêmica</h1>
+          <p class="page-subtitle">Cursos, graduação, bootcamps</p>
+        </div>
+        <button class="btn btn-primary" onclick="HistoryModule.openNewEducation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar
+        </button>
+      </div>
+      <div id="edu-list"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: CERTIFICATIONS                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page" id="page-certs">
+      <div class="page-header page-header-row">
+        <div>
+          <h1 class="page-title">Certificações</h1>
+          <p class="page-subtitle">Certificados e credenciais profissionais</p>
+        </div>
+        <button class="btn btn-primary" onclick="HistoryModule.openNewCert()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar
+        </button>
+      </div>
+      <div id="certs-list"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: LANGUAGES                                                       -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page" id="page-langs">
+      <div class="page-header page-header-row">
+        <div>
+          <h1 class="page-title">Idiomas</h1>
+          <p class="page-subtitle">Línguas e nível de proficiência</p>
+        </div>
+        <button class="btn btn-primary" onclick="HistoryModule.openNewLang()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adicionar
+        </button>
+      </div>
+      <div id="langs-list"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: VAGAS                                                           -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page" id="page-vagas">
+      <div class="page-header page-header-row">
+        <div>
+          <h1 class="page-title">Minhas Vagas</h1>
+          <p class="page-subtitle"><span id="vagasCounter">0 vagas</span></p>
+        </div>
+        <button class="btn btn-primary" onclick="VagasModule.openNew()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Vaga
+        </button>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <label for="v_statusFilter">Filtrar:</label>
+          <select id="v_statusFilter" class="form-select-sm" onchange="VagasModule.applyFilters()">
             <option value="all">Todas</option>
             <option value="criada">Criada</option>
             <option value="aplicada">Aplicada</option>
@@ -158,209 +417,518 @@ body.in-iframe .actions-bar { display: none !important; }
             <option value="nao_passei">Não Passei</option>
           </select>
         </div>
-        <button class="btn btn-primary" onclick="openNovaVagaModal()">➕ Nova Vaga</button>
+        <div class="toolbar-group">
+          <label for="v_sort">Ordenar:</label>
+          <select id="v_sort" class="form-select-sm" onchange="VagasModule.applyFilters()">
+            <option value="newest">Mais recentes</option>
+            <option value="oldest">Mais antigas</option>
+          </select>
+        </div>
       </div>
-      <div id="vagasList"></div>
-      <div id="pagination"></div>
+
+      <div id="vagasList" class="vagas-list"></div>
+      <div id="vagasPagination" class="pagination"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: BACKUP                                                          -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="page" id="page-backup">
+      <div class="page-header">
+        <h1 class="page-title">Backup de Dados</h1>
+        <p class="page-subtitle">Exporte e importe seus dados para não perder nada</p>
+      </div>
+
+      <div class="backup-cards">
+        <div class="backup-card">
+          <div class="backup-card-icon">⬇️</div>
+          <h3>Exportar Backup</h3>
+          <p>Baixe todos os seus dados em um arquivo JSON. Ideal para fazer backup antes de trocar de dispositivo.</p>
+          <button class="btn btn-primary" onclick="BackupModule.exportBackup()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar
+          </button>
+        </div>
+
+        <div class="backup-card">
+          <div class="backup-card-icon">⬆️</div>
+          <h3>Importar Backup</h3>
+          <p>Restaure um backup anteriormente exportado. Os dados existentes serão mesclados.</p>
+          <label class="btn btn-secondary" style="cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Importar
+            <input type="file" accept=".json" style="display:none" onchange="BackupModule.importBackup(event)">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ℹ️ Sobre os dados</div>
+        <p style="font-size:14px;color:#6b7589;line-height:1.7;">
+          Todos os seus dados ficam armazenados <strong>localmente no seu dispositivo</strong> usando IndexedDB. 
+          Nenhuma informação é enviada para servidores externos.<br><br>
+          O backup exportado contém: dados pessoais, histórico profissional, formação acadêmica, certificações, idiomas, vagas e currículos gerados.
+        </p>
+      </div>
+
+      <div id="backup-status" class="status-msg" style="margin-top:16px;"></div>
+    </section>
+
+  </main><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<!-- ── Mobile Bottom Nav ─────────────────────────────────────────────────── -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-items">
+    <div class="mobile-nav-item active" data-nav="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Início</span>
+    </div>
+    <div class="mobile-nav-item" data-nav="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Perfil</span>
+    </div>
+    <div class="mobile-nav-item" data-nav="vagas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>Vagas</span>
+    </div>
+    <div class="mobile-nav-item" data-nav="history-mobile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>Histórico</span>
+    </div>
+    <div class="mobile-nav-item" data-nav="backup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>Backup</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════════════════════════════════ -->
+
+<!-- History Type (mobile only) -->
+<div id="historyTypeModal" class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2 class="modal-title">Histórico Curricular</h2>
+      <button class="modal-close" onclick="closeModal('historyTypeModal')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-secondary" style="justify-content:flex-start;gap:12px;" onclick="closeModal('historyTypeModal');navigateTo('exp')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Experiências Profissionais
+      </button>
+      <button class="btn btn-secondary" style="justify-content:flex-start;gap:12px;" onclick="closeModal('historyTypeModal');navigateTo('edu')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        Formação Acadêmica
+      </button>
+      <button class="btn btn-secondary" style="justify-content:flex-start;gap:12px;" onclick="closeModal('historyTypeModal');navigateTo('certs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+        Certificações
+      </button>
+      <button class="btn btn-secondary" style="justify-content:flex-start;gap:12px;" onclick="closeModal('historyTypeModal');navigateTo('langs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+        Idiomas
+      </button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Nova Vaga                                                          -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="novaVagaModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close" onclick="closeNovaVagaModal()">&times;</span>
-    <h2>Nova Vaga</h2>
+<!-- Vaga Detail -->
+<div id="vagaDetailModal" class="modal-overlay">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="detail_cargo">Vaga</h2>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+          <span style="font-size:14px;color:#6b7589;" id="detail_empresa"></span>
+          <span class="badge" id="detail_status"></span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('vagaDetailModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="detail_eligibility_section" style="display:none;"></div>
 
-    <!-- Extrator URL (informativo na PWA) -->
-    <div class="form-group" style="margin-bottom:20px;">
-      <label style="display:block;margin-bottom:6px;">🔗 Preencher via URL</label>
-      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
-        Cole o link da vaga do LinkedIn para preencher automaticamente.
-      </p>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px;color:#8b92a8;margin-bottom:6px;" id="detail_date"></div>
+        <div style="background:var(--surface-dim);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap;font-family:var(--font-mono);" id="detail_descricao"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap;justify-content:flex-start;" id="detail_actions"></div>
+  </div>
+</div>
+
+<!-- Vaga Form (New/Edit) -->
+<div id="vagaFormModal" class="modal-overlay">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="vagaFormTitle">Nova Vaga</h2>
+      <button class="modal-close" onclick="closeModal('vagaFormModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- URL Extractor -->
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">🔗 Preencher via URL LinkedIn</label>
+        <div style="display:flex;gap:8px;">
+          <input type="url" id="v_url" class="form-input" placeholder="https://www.linkedin.com/jobs/view/…" style="flex:1;">
+          <button class="btn btn-secondary btn-sm" id="extractBtn" onclick="VagasModule.extractUrl()" style="white-space:nowrap;">Extrair</button>
+        </div>
+        <div id="extract-status" class="status-msg" style="margin-top:6px;"></div>
+      </div>
+
+      <div class="divider-label">ou preencha manualmente</div>
+
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">Empresa *</label>
+          <input type="text" id="v_empresa" class="form-input" placeholder="Nome da empresa">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo *</label>
+          <input type="text" id="v_cargo" class="form-input" placeholder="Dev Backend Sênior">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;" id="vagaFormStatus">
+        <label class="form-label">Status</label>
+        <select id="v_status" class="form-select">
+          <option value="criada">Criada</option>
+          <option value="aplicada">Aplicada</option>
+          <option value="entrevista">Em Entrevista</option>
+          <option value="rejeitada">Rejeitada</option>
+          <option value="desisti">Desisti</option>
+          <option value="nao_passei">Não Passei</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descrição da Vaga *</label>
+        <textarea id="v_descricao" class="form-textarea" rows="12" placeholder="Cole aqui a descrição completa da vaga"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="VagasModule.saveVaga()">Salvar</button>
+      <button class="btn btn-secondary" onclick="closeModal('vagaFormModal')">Cancelar</button>
+      <div id="vaga-form-status" class="status-msg" style="margin:0;flex:1;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt Modal -->
+<div id="promptModal" class="modal-overlay">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <h2 class="modal-title">Prompt para ChatGPT</h2>
+      <button class="modal-close" onclick="closeModal('promptModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:#6b7589;margin-bottom:14px;">Copie este prompt e cole no ChatGPT para gerar seu currículo estratégico.</p>
+      <div class="output-box">
+        <div class="output-header">
+          <span class="output-header-label">prompt completo</span>
+          <button class="btn btn-secondary btn-sm" id="copyPromptBtn" onclick="VagasModule.copyPrompt()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar
+          </button>
+        </div>
+        <pre class="output-pre" id="promptContent"></pre>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="VagasModule.advanceToJson()">Próxima Etapa →</button>
+      <button class="btn btn-secondary" onclick="closeModal('promptModal')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Input Modal -->
+<div id="jsonModal" class="modal-overlay">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="jsonModalTitle">Colar Resposta do ChatGPT</h2>
+      <button class="modal-close" onclick="closeModal('jsonModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:#6b7589;margin-bottom:12px;">Cole o JSON completo retornado pelo ChatGPT:</p>
+      <textarea id="jsonInput" class="form-textarea" rows="18"
+        placeholder='{ "versao": "1.0.0", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-success btn-lg" onclick="VagasModule.saveJson()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Gerar Currículo
+      </button>
+      <button class="btn btn-secondary" onclick="VagasModule.backToPrompt()">← Voltar</button>
+      <div id="json-modal-status" class="status-msg" style="margin:0;flex:1;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Result / Eligibility Modal -->
+<div id="resultModal" class="modal-overlay">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <h2 class="modal-title">Análise de Elegibilidade</h2>
+      <button class="modal-close" onclick="closeModal('resultModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="result_eligibility"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-success" onclick="VagasModule.viewResume()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Ver Currículo
+      </button>
+      <button class="btn btn-secondary" onclick="closeModal('resultModal')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resume Visualizer -->
+<div id="vizModal" class="modal-overlay modal-viz">
+  <div class="modal-box modal-box-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="vizTitle" style="font-size:14px;font-family:var(--font-mono);font-weight:500;"></h2>
       <div style="display:flex;gap:8px;">
-        <input type="url" id="modal_url_vaga" placeholder="https://www.linkedin.com/jobs/view/…"
-               style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
-        <button class="btn btn-primary btn-small" onclick="extrairVagaUrl()" id="btnExtrair">🔍 Extrair</button>
-      </div>
-      <div id="statusExtracao" class="status" style="margin-top:8px;"></div>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <div style="flex:1;height:1px;background:var(--border);"></div>
-      <span style="font-size:12px;color:var(--text-secondary);">ou preencha manualmente</span>
-      <div style="flex:1;height:1px;background:var(--border);"></div>
-    </div>
-
-    <div class="form-group" style="margin-bottom:16px;">
-      <label>Empresa *</label>
-      <input type="text" id="modal_empresa" placeholder="Nome da empresa">
-    </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label>Cargo *</label>
-      <input type="text" id="modal_cargo" placeholder="Ex: Desenvolvedor Backend Sênior">
-    </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label>Descrição da Vaga *</label>
-      <textarea id="modal_descricao" rows="10" placeholder="Cole aqui a descrição completa da vaga"></textarea>
-    </div>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="salvarNovaVaga()">💾 Salvar Vaga</button>
-      <button class="btn btn-secondary" onclick="closeNovaVagaModal()">Cancelar</button>
-    </div>
-    <div class="status" id="modalStatus"></div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Editar Vaga                                                        -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="editVagaModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close" onclick="closeEditVagaModal()">&times;</span>
-    <h2>Editar Vaga</h2>
-    <input type="hidden" id="edit_uuid">
-    <div class="form-group" style="margin-bottom:16px;">
-      <label>Empresa *</label>
-      <input type="text" id="edit_empresa">
-    </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label>Cargo *</label>
-      <input type="text" id="edit_cargo">
-    </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label>Descrição *</label>
-      <textarea id="edit_descricao" rows="10"></textarea>
-    </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label>Status</label>
-      <select id="edit_status">
-        <option value="criada">Criada</option>
-        <option value="aplicada">Aplicada</option>
-        <option value="entrevista">Em Entrevista</option>
-        <option value="rejeitada">Rejeitada</option>
-        <option value="desisti">Desisti</option>
-        <option value="nao_passei">Não Passei</option>
-      </select>
-    </div>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="salvarEdicaoVaga()">💾 Salvar Alterações</button>
-      <button class="btn btn-secondary" onclick="closeEditVagaModal()">Cancelar</button>
-    </div>
-    <div class="status" id="editModalStatus"></div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Ver Descrição                                                      -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="descricaoModal" class="modal" style="display:none;">
-  <div class="modal-content descricao-modal-content">
-    <span class="close" onclick="closeDescricaoModal()">&times;</span>
-    <h2 id="descricaoTitulo">Descrição da Vaga</h2>
-    <pre id="descricaoTexto"></pre>
-    <div class="actions" style="margin-top:16px;">
-      <button class="btn btn-secondary" onclick="closeDescricaoModal()">Fechar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Gerar Prompt                                                       -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="promptModal" class="modal" style="display:none;">
-  <div class="modal-content modal-large">
-    <span class="close" onclick="closePromptModal()">&times;</span>
-    <h2>Prompt para ChatGPT</h2>
-    <p class="help-text">Copie este prompt e cole no ChatGPT para gerar seu currículo estratégico:</p>
-    <div class="output-box">
-      <div class="output-header">
-        <span>📋 Prompt Completo</span>
-        <button class="btn btn-small btn-secondary" onclick="copyPrompt()">📋 Copiar</button>
-      </div>
-      <pre id="generatedPrompt"></pre>
-    </div>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="avancarParaColarResposta()">➡️ Próxima Etapa</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Colar / Editar JSON                                                -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="respostaModal" class="modal" style="display:none;">
-  <div class="modal-content modal-large">
-    <span class="close" onclick="closeRespostaModal()">&times;</span>
-    <h2 id="respostaModalTitulo">Colar Resposta do ChatGPT</h2>
-    <input type="hidden" id="resposta_vaga_uuid">
-    <p class="help-text" id="respostaModalDescricao">Cole aqui o JSON completo retornado pelo ChatGPT:</p>
-    <div class="form-group">
-      <textarea id="jsonResposta" rows="18"
-        placeholder='{ "versao": "1.0.0", "data_geracao": "2025-02-16", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
-    </div>
-    <div class="actions">
-      <button id="btnGerarCurriculo" class="btn btn-success btn-large" onclick="gerarCurriculo()">✨ Gerar Currículo</button>
-      <button id="btnVoltarPrompt" class="btn btn-secondary" onclick="voltarParaPrompt()">⬅️ Voltar</button>
-    </div>
-    <div class="status" id="respostaStatus"></div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Elegibilidade + Ações                                              -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="curriculoModal" class="modal" style="display:none;">
-  <div class="modal-content modal-large">
-    <span class="close" onclick="closeCurriculoModal()">&times;</span>
-    <h2>Análise de Elegibilidade</h2>
-    <div class="section">
-      <div id="eligibilityContent"></div>
-    </div>
-    <div class="actions">
-      <button class="btn btn-success" onclick="abrirVisualizacaoCurriculo()">👁️ Visualizar Currículo</button>
-      <button class="btn btn-primary" onclick="downloadJsonCurriculo()">💾 Baixar JSON</button>
-      <button class="btn btn-secondary" onclick="closeCurriculoModal()">Fechar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Visualizador iframe                                                -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="visualizadorModal" class="modal" style="display:none;">
-  <div class="modal-content visualizador-modal-content">
-    <div class="visualizador-header">
-      <h2 id="visualizadorTitulo">Currículo</h2>
-      <div class="header-actions">
-        <button class="btn btn-primary btn-small" onclick="imprimirDoVisualizador()">🖨️ PDF</button>
-        <button class="btn btn-secondary btn-small" onclick="closeVisualizadorModal()">✕</button>
+        <button class="btn btn-primary btn-sm" onclick="VagasModule.printResume()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          PDF
+        </button>
+        <button class="modal-close" onclick="closeModal('vizModal');document.getElementById('resumeIframe').src=''">✕</button>
       </div>
     </div>
-    <iframe id="resumeIframe" title="Visualizador de Currículo"></iframe>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!-- MODAL: Confirmação                                                        -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<div id="confirmModal" class="modal" style="display:none;">
-  <div class="modal-content confirm-modal-content">
-    <div class="confirm-icon">⚠️</div>
-    <h3 id="confirmTitulo">Confirmar ação</h3>
-    <p id="confirmMensagem">Tem certeza?</p>
-    <div class="confirm-actions">
-      <button id="confirmBtn" class="btn btn-danger">Confirmar</button>
-      <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+    <div class="modal-body">
+      <iframe id="resumeIframe" title="Currículo"></iframe>
     </div>
   </div>
 </div>
 
-<!-- Scripts: DB primeiro, depois lógica -->
+<!-- Experience Form Modal -->
+<div id="expModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title" id="expModalTitle">Nova Experiência</h2>
+      <button class="modal-close" onclick="closeModal('expModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">Cargo / Função *</label>
+          <input type="text" id="exp_role" class="form-input" placeholder="Desenvolvedor Backend Sênior">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Empresa *</label>
+          <input type="text" id="exp_company" class="form-input" placeholder="Nome da empresa">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cidade / Local</label>
+          <input type="text" id="exp_location" class="form-input" placeholder="São Paulo, SP (Remoto)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stack / Tecnologias</label>
+          <input type="text" id="exp_stack" class="form-input" placeholder="Node.js, TypeScript, PostgreSQL">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Início</label>
+          <input type="month" id="exp_startDate" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fim</label>
+          <input type="month" id="exp_endDate" class="form-input">
+          <div class="toggle-group" style="margin-top:6px;">
+            <input type="checkbox" id="exp_current">
+            <label for="exp_current" style="font-size:13px;">Cargo atual</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição, responsabilidades e resultados</label>
+        <textarea id="exp_description" class="form-textarea" rows="8"
+          placeholder="Descreva suas responsabilidades, tecnologias utilizadas e resultados alcançados (métricas, impactos)..."></textarea>
+      </div>
+      <div id="exp-modal-status" class="status-msg" style="margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="HistoryModule.saveExperience()">Salvar</button>
+      <button class="btn btn-secondary" onclick="closeModal('expModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Education Form Modal -->
+<div id="eduModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title" id="eduModalTitle">Nova Formação</h2>
+      <button class="modal-close" onclick="closeModal('eduModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">Curso / Grau *</label>
+          <input type="text" id="edu_degree" class="form-input" placeholder="Bacharelado em Ciência da Computação">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Instituição *</label>
+          <input type="text" id="edu_institution" class="form-input" placeholder="Nome da instituição">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ano de início</label>
+          <input type="text" id="edu_startDate" class="form-input" placeholder="2018">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ano de conclusão</label>
+          <input type="text" id="edu_endDate" class="form-input" placeholder="2022 (ou 'Em andamento')">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea id="edu_notes" class="form-textarea" rows="3" placeholder="Ex: Foco em engenharia de software..."></textarea>
+      </div>
+      <div id="edu-modal-status" class="status-msg" style="margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="HistoryModule.saveEducation()">Salvar</button>
+      <button class="btn btn-secondary" onclick="closeModal('eduModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Certification Form Modal -->
+<div id="certModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title" id="certModalTitle">Nova Certificação</h2>
+      <button class="modal-close" onclick="closeModal('certModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nome da Certificação *</label>
+          <input type="text" id="cert_name" class="form-input" placeholder="AWS Solutions Architect">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Emissor *</label>
+          <input type="text" id="cert_issuer" class="form-input" placeholder="Amazon Web Services">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data (YYYY-MM)</label>
+          <input type="month" id="cert_date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ID / Credencial</label>
+          <input type="text" id="cert_credential" class="form-input" placeholder="Opcional">
+        </div>
+      </div>
+      <div id="cert-modal-status" class="status-msg" style="margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="HistoryModule.saveCert()">Salvar</button>
+      <button class="btn btn-secondary" onclick="closeModal('certModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Language Form Modal -->
+<div id="langModal" class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2 class="modal-title" id="langModalTitle">Novo Idioma</h2>
+      <button class="modal-close" onclick="closeModal('langModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Idioma *</label>
+        <input type="text" id="lang_language" class="form-input" placeholder="Inglês">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Proficiência</label>
+        <select id="lang_proficiency" class="form-select">
+          <option value="nativo">Nativo</option>
+          <option value="fluente">Fluente</option>
+          <option value="avançado">Avançado</option>
+          <option value="intermediário" selected>Intermediário</option>
+          <option value="básico">Básico</option>
+        </select>
+      </div>
+      <div id="lang-modal-status" class="status-msg" style="margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="HistoryModule.saveLang()">Salvar</button>
+      <button class="btn btn-secondary" onclick="closeModal('langModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirmModal" class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2 class="modal-title" id="confirmTitle">Confirmar ação</h2>
+      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:28px 24px;">
+      <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+      <p id="confirmMessage" style="font-size:14px;color:#6b7589;line-height:1.6;"></p>
+    </div>
+    <div class="modal-footer" style="justify-content:center;">
+      <button id="confirmOkBtn" class="btn btn-danger">Confirmar</button>
+      <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Cookie Banner ─────────────────────────────────────────────────────── -->
+<div id="cookieBanner">
+  <div>
+    <div class="cookie-title">🍪 Política de Cookies</div>
+    <p class="cookie-text">
+      Este aplicativo usa <strong>cookies e armazenamento local</strong> (IndexedDB, localStorage) 
+      essencialmente para salvar seus dados <em>no seu próprio dispositivo</em>. 
+      Nenhum dado é compartilhado com terceiros. Ao continuar usando o app, você concorda com o uso dessas tecnologias.
+      <a onclick="openModal('cookieDetailModal')" style="cursor:pointer;">Saiba mais</a>
+    </p>
+  </div>
+  <div class="cookie-actions">
+    <button class="btn-cookie-accept" onclick="acceptCookies()">Entendido, continuar</button>
+  </div>
+</div>
+
+<!-- Cookie Detail Modal -->
+<div id="cookieDetailModal" class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2 class="modal-title">🍪 Política de Cookies</h2>
+      <button class="modal-close" onclick="closeModal('cookieDetailModal')">✕</button>
+    </div>
+    <div class="modal-body" style="font-size:14px;color:#374151;line-height:1.7;">
+      <h4 style="margin-bottom:8px;color:var(--ink);">O que usamos</h4>
+      <p style="margin-bottom:12px;"><strong>IndexedDB</strong> — armazenamento principal dos seus dados (perfil, vagas, currículos, histórico). Fica 100% no seu dispositivo.</p>
+      <p style="margin-bottom:12px;"><strong>localStorage</strong> — preferências do app (ex: confirmação desta política de cookies).</p>
+      <p style="margin-bottom:12px;"><strong>sessionStorage</strong> — dados temporários de sessão (ex: currículo aberto para visualização).</p>
+      <h4 style="margin-bottom:8px;color:var(--ink);">O que NÃO fazemos</h4>
+      <p style="margin-bottom:12px;">Não usamos cookies de rastreamento, analytics externos, ou enviamos seus dados para nenhum servidor próprio.</p>
+      <h4 style="margin-bottom:8px;color:var(--ink);">Serviços externos</h4>
+      <p>O extrator automático de vagas usa um servidor de terceiros (<code>linkedin-job-extractor-backend.onrender.com</code>) apenas quando você solicita a extração de URL.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('cookieDetailModal');acceptCookies()">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
 <script src="assets/js/db.js"></script>
-<script src="assets/js/main.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/profile.js"></script>
+<script src="assets/js/history.js"></script>
 <script src="assets/js/vagas.js"></script>
+<script src="assets/js/backup.js"></script>
+<script>
+  // Inject version
+  document.getElementById('appVersion').textContent = 'v__APP_VERSION__';
+</script>
 </body>
 </html>

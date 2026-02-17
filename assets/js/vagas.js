@@ -1,498 +1,482 @@
-// vagas.js — Gerenciamento de vagas e currículos
-// Usa IndexedDB (DB global) em vez de fetch ao server.py
+/**
+ * vagas.js — Job listings management with redesigned card UX
+ */
 
-let todasVagas      = [];
-let vagasFiltradas  = [];
-let paginaAtual     = 1;
-const vagasPorPagina = 10;
-let vagaAtualUUID   = null;
-let curriculoAtual  = null;
+window.VagasModule = (() => {
+  let allVagas     = [];
+  let filtered     = [];
+  let currentPage  = 1;
+  const perPage    = 10;
+  let activeVaga   = null;
+  let activeCurr   = null;
 
-document.addEventListener('DOMContentLoaded', () => carregarVagas());
-
-// ── Vagas ─────────────────────────────────────────────────────────────────────
-
-async function carregarVagas() {
-  try {
-    todasVagas = await DB.listVagas();
-    await filterVagas();
-  } catch (err) {
-    console.error('Erro ao carregar vagas:', err);
-  }
-}
-
-async function filterVagas() {
-  const statusFilter = document.getElementById('statusFilter').value;
-  vagasFiltradas = statusFilter === 'all'
-    ? [...todasVagas]
-    : todasVagas.filter(v => v.status === statusFilter);
-  paginaAtual = 1;
-  await renderizarVagas();
-}
-
-async function renderizarVagas() {
-  const startIndex   = (paginaAtual - 1) * vagasPorPagina;
-  const vagasPagina  = vagasFiltradas.slice(startIndex, startIndex + vagasPorPagina);
-  const container    = document.getElementById('vagasList');
-
-  if (vagasFiltradas.length === 0) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:40px;color:var(--text-secondary);">
-        <p style="font-size:32px;margin-bottom:12px;">📭</p>
-        <p style="font-weight:600;margin-bottom:8px;">Nenhuma vaga encontrada.</p>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="openNovaVagaModal()">➕ Criar Primeira Vaga</button>
-      </div>`;
-    document.getElementById('pagination').innerHTML = '';
-    return;
-  }
-
-  // Checar existência de currículos em paralelo
-  const checks = await Promise.all(vagasPagina.map(v => DB.existsCurriculo(v.uuid)));
-
-  container.innerHTML = vagasPagina.map((vaga, i) => {
-    const temCurriculo = checks[i];
-    return `
-    <div class="vaga-card">
-      <div class="vaga-header">
-        <div>
-          <div class="vaga-title">${esc(vaga.cargo)}</div>
-          <div class="vaga-empresa">${esc(vaga.empresa)}</div>
-        </div>
-        <div class="vaga-status status-${vaga.status}">${formatarStatus(vaga.status)}</div>
-      </div>
-      <div class="vaga-meta">
-        <span>📅 Cadastrada em ${formatarData(vaga.data_cadastro)}</span>
-        <span>🔄 Atualizada em ${formatarData(vaga.data_atualizacao)}</span>
-      </div>
-      <div class="vaga-descricao">${esc(vaga.descricao.substring(0, 200))}…</div>
-      <div class="vaga-actions">
-        ${temCurriculo ? `
-          <button class="btn btn-success btn-small" onclick="visualizarCurriculo('${vaga.uuid}')">👁️ Ver Currículo</button>
-          <button class="btn btn-primary btn-small" onclick="editarJsonCurriculo('${vaga.uuid}')">✏️ Editar JSON</button>
-          <button class="btn btn-danger btn-small" onclick="excluirCurriculo('${vaga.uuid}')">🗑️ Excluir Currículo</button>
-        ` : `
-          <button class="btn btn-primary btn-small" onclick="gerarPromptVaga('${vaga.uuid}')">🚀 Gerar Currículo</button>
-        `}
-        <button class="btn btn-secondary btn-small" onclick="editarVaga('${vaga.uuid}')">✏️ Editar</button>
-        <button class="btn btn-secondary btn-small" onclick="verDescricao('${vaga.uuid}')">📄 Descrição</button>
-        <button class="btn btn-danger btn-small" onclick="excluirVaga('${vaga.uuid}')">🗑️ Excluir</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  renderizarPaginacao();
-}
-
-function renderizarPaginacao() {
-  const totalPaginas = Math.ceil(vagasFiltradas.length / vagasPorPagina);
-  const container    = document.getElementById('pagination');
-  if (totalPaginas <= 1) { container.innerHTML = ''; return; }
-
-  let html = `<button class="page-btn" ${paginaAtual===1 ? 'disabled':''} onclick="mudarPagina(${paginaAtual-1})">←</button>`;
-  for (let i = 1; i <= totalPaginas; i++) {
-    html += `<button class="page-btn ${paginaAtual===i?'active':''}" onclick="mudarPagina(${i})">${i}</button>`;
-  }
-  html += `<button class="page-btn" ${paginaAtual===totalPaginas?'disabled':''} onclick="mudarPagina(${paginaAtual+1})">→</button>`;
-  container.innerHTML = html;
-}
-
-async function mudarPagina(pagina) { paginaAtual = pagina; await renderizarVagas(); }
-
-function formatarStatus(s) {
-  const map = { criada:'Criada', aplicada:'Aplicada', entrevista:'Em Entrevista', rejeitada:'Rejeitada', desisti:'Desisti', nao_passei:'Não Passei' };
-  return map[s] || s;
-}
-
-function formatarData(iso) {
-  return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-}
-
-function esc(str) {
-  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ── Modais de Vaga ────────────────────────────────────────────────────────────
-
-function openNovaVagaModal() {
-  document.getElementById('novaVagaModal').style.display = 'flex';
-  ['modal_empresa','modal_cargo','modal_descricao','modal_url_vaga'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  const statusEl = document.getElementById('statusExtracao');
-  if (statusEl) statusEl.style.display = 'none';
-}
-function closeNovaVagaModal() { document.getElementById('novaVagaModal').style.display = 'none'; }
-
-async function salvarNovaVaga() {
-  const empresa   = document.getElementById('modal_empresa').value.trim();
-  const cargo     = document.getElementById('modal_cargo').value.trim();
-  const descricao = document.getElementById('modal_descricao').value.trim();
-  if (!empresa || !cargo || !descricao) {
-    showModalStatus('modalStatus','error','Todos os campos são obrigatórios!'); return;
-  }
-  try {
-    await DB.createVaga({ empresa, cargo, descricao });
-    showModalStatus('modalStatus','success','✅ Vaga criada com sucesso!');
-    setTimeout(() => { closeNovaVagaModal(); carregarVagas(); }, 900);
-  } catch (err) {
-    showModalStatus('modalStatus','error','❌ Erro ao criar vaga: ' + err.message);
-  }
-}
-
-function editarVaga(uuid) {
-  const vaga = todasVagas.find(v => v.uuid === uuid);
-  if (!vaga) return;
-  document.getElementById('edit_uuid').value      = vaga.uuid;
-  document.getElementById('edit_empresa').value   = vaga.empresa;
-  document.getElementById('edit_cargo').value     = vaga.cargo;
-  document.getElementById('edit_descricao').value = vaga.descricao;
-  document.getElementById('edit_status').value    = vaga.status;
-  document.getElementById('editVagaModal').style.display = 'flex';
-}
-function closeEditVagaModal() { document.getElementById('editVagaModal').style.display = 'none'; }
-
-async function salvarEdicaoVaga() {
-  const uuid      = document.getElementById('edit_uuid').value;
-  const empresa   = document.getElementById('edit_empresa').value.trim();
-  const cargo     = document.getElementById('edit_cargo').value.trim();
-  const descricao = document.getElementById('edit_descricao').value.trim();
-  const status    = document.getElementById('edit_status').value;
-  if (!empresa || !cargo || !descricao) {
-    showModalStatus('editModalStatus','error','Todos os campos são obrigatórios!'); return;
-  }
-  try {
-    await DB.updateVaga(uuid, { empresa, cargo, descricao, status });
-    showModalStatus('editModalStatus','success','✅ Vaga atualizada!');
-    setTimeout(() => { closeEditVagaModal(); carregarVagas(); }, 900);
-  } catch (err) {
-    showModalStatus('editModalStatus','error','❌ Erro: ' + err.message);
-  }
-}
-
-function verDescricao(uuid) {
-  const vaga = todasVagas.find(v => v.uuid === uuid);
-  if (!vaga) return;
-  document.getElementById('descricaoTexto').textContent = vaga.descricao;
-  document.getElementById('descricaoTitulo').textContent = `${vaga.cargo} — ${vaga.empresa}`;
-  document.getElementById('descricaoModal').style.display = 'flex';
-}
-function closeDescricaoModal() { document.getElementById('descricaoModal').style.display = 'none'; }
-
-async function excluirVaga(uuid) {
-  const vaga = todasVagas.find(v => v.uuid === uuid);
-  if (!vaga) return;
-  abrirConfirmacao(
-    `Excluir vaga: ${vaga.cargo} — ${vaga.empresa}`,
-    'Esta ação não pode ser desfeita. O currículo gerado também será excluído.',
-    async () => {
-      await DB.deleteVaga(uuid);
-      await carregarVagas();
-    }
-  );
-}
-
-async function excluirCurriculo(uuid) {
-  const vaga = todasVagas.find(v => v.uuid === uuid);
-  abrirConfirmacao(
-    'Excluir currículo gerado',
-    `O currículo de "${vaga?.cargo || 'esta vaga'}" será removido.`,
-    async () => {
-      await DB.deleteCurriculo(uuid);
-      await carregarVagas();
-    }
-  );
-}
-
-// ── Modal de Confirmação ──────────────────────────────────────────────────────
-
-function abrirConfirmacao(titulo, mensagem, callback) {
-  document.getElementById('confirmTitulo').textContent  = titulo;
-  document.getElementById('confirmMensagem').textContent = mensagem;
-  document.getElementById('confirmModal').style.display = 'flex';
-  document.getElementById('confirmBtn').onclick = async () => {
-    closeConfirmModal();
-    await callback();
+  // ── Icons (inline SVG) ────────────────────────────────────────────────────
+  const ico = {
+    eye:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    edit:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    trash:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+    plus:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    copy:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+    print:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
+    down:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+    rocket: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>`,
   };
-}
-function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; }
 
-function showModalStatus(elementId, type, message) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-
-  el.textContent = message;
-  el.className = 'status'; // reset
-
-  if (type === 'success') {
-    el.classList.add('status-success');
-  } else if (type === 'error') {
-    el.classList.add('status-error');
+  // ── Load ──────────────────────────────────────────────────────────────────
+  async function load() {
+    allVagas = await DB.listVagas();
+    applyFilters();
   }
 
-  el.style.display = 'block';
-}
+  function applyFilters() {
+    const statusVal = document.getElementById('v_statusFilter')?.value || 'all';
+    const sortVal   = document.getElementById('v_sort')?.value || 'newest';
 
+    filtered = statusVal === 'all' ? [...allVagas] : allVagas.filter(v => v.status === statusVal);
 
-// ── Extrator de URL (agora client-side apenas como informação) ────────────────
-// Sem backend disponível na PWA — orientar colar manualmente
+    filtered.sort((a, b) => {
+      const da = new Date(a.data_cadastro);
+      const db = new Date(b.data_cadastro);
+      return sortVal === 'oldest' ? da - db : db - da;
+    });
 
-async function extrairVagaUrl() {
-  const url = document.getElementById('modal_url_vaga').value.trim();
-  const btn = document.getElementById('btnExtrair');
-
-  if (!url) {
-    showModalStatus('statusExtracao', 'error', 'Cole uma URL válida.');
-    return;
+    currentPage = 1;
+    render();
   }
 
-  try {
-    showModalStatus(
-      'statusExtracao',
-      'success',
-      '⏳ Servidor iniciando, pode levar alguns segundos...'
-    );
+  // ── Render ────────────────────────────────────────────────────────────────
+  async function render() {
+    const start   = (currentPage - 1) * perPage;
+    const page    = filtered.slice(start, start + perPage);
+    const list    = document.getElementById('vagasList');
+    const counter = document.getElementById('vagasCounter');
 
-    btn.disabled = true;
-    btn.textContent = 'Extraindo...';
+    if (counter) counter.textContent = `${filtered.length} vaga${filtered.length !== 1 ? 's' : ''}`;
 
-    const response = await fetch(
-      'https://linkedin-job-extractor-backend.onrender.com/api/extrair-vaga',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+    if (!filtered.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">💼</span>
+          <h3>Nenhuma vaga encontrada</h3>
+          <p>Comece adicionando sua primeira oportunidade.</p>
+          <button class="btn btn-primary btn-sm" onclick="VagasModule.openNew()">
+            ${ico.plus} Nova Vaga
+          </button>
+        </div>`;
+      document.getElementById('vagasPagination').innerHTML = '';
+      return;
+    }
+
+    const checks = await Promise.all(page.map(v => DB.existsCurriculo(v.uuid)));
+
+    list.innerHTML = page.map((vaga, i) => {
+      const hasCurr = checks[i];
+      const eli     = vaga._eligibility || null;
+      const eliTag  = eli ? renderEligibilityTag(eli) : (hasCurr ? '<span class="vaga-card-eligibility eligibility-none">Sem pontuação</span>' : '');
+
+      return `
+      <div class="vaga-card" onclick="VagasModule.openDetail('${vaga.uuid}')">
+        <div class="vaga-card-header">
+          <div>
+            <div class="vaga-card-title">${App.esc(vaga.cargo)}</div>
+            <div class="vaga-card-empresa">${App.esc(vaga.empresa)}</div>
+          </div>
+          <span class="badge badge-${vaga.status}">${formatStatus(vaga.status)}</span>
+        </div>
+        <div class="vaga-card-meta">
+          <span>${ico.calendarSmall || '📅'} ${App.formatDate(vaga.data_cadastro)}</span>
+          ${hasCurr ? '<span class="badge" style="background:var(--success-light);color:#065f46;">✓ Currículo gerado</span>' : ''}
+        </div>
+        ${eliTag}
+        <div class="vaga-card-footer">
+          <div style="font-size:12px;color:#8b92a8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%;">
+            ${App.esc(vaga.descricao.substring(0,100))}…
+          </div>
+          <div class="vaga-card-actions" onclick="event.stopPropagation()">
+            <button class="btn btn-ghost btn-icon" title="Editar" onclick="VagasModule.openEdit('${vaga.uuid}')">
+              ${ico.edit}
+            </button>
+            <button class="btn btn-ghost btn-icon" title="Excluir" onclick="VagasModule.remove('${vaga.uuid}')">
+              ${ico.trash}
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    renderPagination();
+  }
+
+  function renderEligibilityTag(eli) {
+    const stars = eli.pontuacao_estrelas || 0;
+    let cls = 'eligibility-none';
+    if (stars >= 4) cls = 'eligibility-high';
+    else if (stars >= 3) cls = 'eligibility-medium';
+    else if (stars >= 1) cls = 'eligibility-low';
+
+    return `<div class="vaga-card-eligibility ${cls}">
+      ${'★'.repeat(stars)}${'☆'.repeat(5-stars)} ${App.esc(eli.status)}
+    </div>`;
+  }
+
+  function renderPagination() {
+    const total = Math.ceil(filtered.length / perPage);
+    const el    = document.getElementById('vagasPagination');
+    if (total <= 1) { el.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="VagasModule.goPage(${currentPage-1})">←</button>`;
+    for (let i = 1; i <= total; i++) {
+      html += `<button class="page-btn ${currentPage===i?'active':''}" onclick="VagasModule.goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" ${currentPage===total?'disabled':''} onclick="VagasModule.goPage(${currentPage+1})">→</button>`;
+    el.innerHTML = html;
+  }
+
+  function goPage(p) { currentPage = p; render(); }
+
+  // ── Detail Modal (card click) ─────────────────────────────────────────────
+  async function openDetail(uuid) {
+    activeVaga = allVagas.find(v => v.uuid === uuid);
+    if (!activeVaga) return;
+
+    const hasCurr = await DB.existsCurriculo(uuid);
+    activeCurr    = hasCurr ? await DB.getCurriculo(uuid) : null;
+
+    // Populate modal header
+    document.getElementById('detail_cargo').textContent   = activeVaga.cargo;
+    document.getElementById('detail_empresa').textContent = activeVaga.empresa;
+    document.getElementById('detail_status').className    = `badge badge-${activeVaga.status}`;
+    document.getElementById('detail_status').textContent  = formatStatus(activeVaga.status);
+    document.getElementById('detail_date').textContent    = App.formatDate(activeVaga.data_cadastro);
+    document.getElementById('detail_descricao').textContent = activeVaga.descricao;
+
+    // Show eligibility if curriculum exists
+    const eliSection = document.getElementById('detail_eligibility_section');
+    if (activeCurr?.elegibilidade) {
+      eliSection.style.display = 'block';
+      eliSection.innerHTML     = renderEligibilityMini(activeCurr.elegibilidade);
+    } else {
+      eliSection.style.display = 'none';
+    }
+
+    // Update action buttons
+    const actionsEl = document.getElementById('detail_actions');
+    actionsEl.innerHTML = hasCurr
+      ? `
+        <button class="btn btn-success" onclick="VagasModule.viewResume()">
+          ${ico.eye} Ver Currículo
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="VagasModule.generatePrompt()">
+          ${ico.rocket} Regen. Prompt
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="VagasModule.editJson()">
+          ${ico.edit} Editar JSON
+        </button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="VagasModule.removeResume()">
+          ${ico.trash} Excluir currículo
+        </button>`
+      : `
+        <button class="btn btn-primary" onclick="VagasModule.generatePrompt()">
+          ${ico.rocket} Gerar currículo com IA
+        </button>`;
+
+    App.openModal('vagaDetailModal');
+  }
+
+  function renderEligibilityMini(eli) {
+    const stars = eli.pontuacao_estrelas || 0;
+    const cls   = getEliClass(eli.status);
+    return `
+      <div class="eligibility-score-card" style="margin:0;margin-bottom:16px;">
+        <div class="stars-display">${'★'.repeat(stars)}${'☆'.repeat(5-stars)}</div>
+        <div class="eligibility-status ${cls}">${App.esc(eli.status)}</div>
+        ${eli.pontuacao_percentual ? `<div class="eligibility-percent">${eli.pontuacao_percentual}% compatibilidade</div>` : ''}
+        <div style="font-size:13px;margin-top:8px;color:#6b7589;">${App.esc(eli.recomendacao)}</div>
+      </div>`;
+  }
+
+  // ── New / Edit Vaga ───────────────────────────────────────────────────────
+  function openNew() {
+    activeVaga = null;
+    setVals({ v_empresa:'', v_cargo:'', v_descricao:'', v_url:'' });
+    document.getElementById('vagaFormTitle').textContent = 'Nova Vaga';
+    document.getElementById('vagaFormStatus').style.display = 'none';
+    App.openModal('vagaFormModal');
+  }
+
+  function openEdit(uuid) {
+    const vaga = allVagas.find(v => v.uuid === uuid);
+    if (!vaga) return;
+    activeVaga = vaga;
+    setVals({ v_empresa: vaga.empresa, v_cargo: vaga.cargo, v_descricao: vaga.descricao });
+    document.getElementById('vagaFormTitle').textContent = 'Editar Vaga';
+    document.getElementById('vagaFormStatus').style.display = 'block';
+    document.getElementById('v_status').value = vaga.status;
+    App.closeModal('vagaDetailModal');
+    App.openModal('vagaFormModal');
+  }
+
+  async function saveVaga() {
+    const empresa   = gv('v_empresa');
+    const cargo     = gv('v_cargo');
+    const descricao = gv('v_descricao');
+
+    if (!empresa || !cargo || !descricao) {
+      App.showStatus('vaga-form-status','error','Todos os campos são obrigatórios!');
+      return;
+    }
+
+    try {
+      if (activeVaga) {
+        const status = document.getElementById('v_status')?.value || activeVaga.status;
+        await DB.updateVaga(activeVaga.uuid, { empresa, cargo, descricao, status });
+      } else {
+        await DB.createVaga({ empresa, cargo, descricao });
+      }
+      App.closeModal('vagaFormModal');
+      load();
+    } catch (err) {
+      App.showStatus('vaga-form-status','error','Erro: ' + err.message);
+    }
+  }
+
+  function remove(uuid) {
+    const vaga = allVagas.find(v => v.uuid === uuid);
+    App.confirm(
+      `Excluir vaga`,
+      `"${vaga?.cargo} — ${vaga?.empresa}" será excluída permanentemente, incluindo o currículo gerado.`,
+      async () => {
+        await DB.deleteVaga(uuid);
+        App.closeModal('vagaDetailModal');
+        load();
       }
     );
+  }
 
-    if (!response.ok) throw new Error('Erro ao acessar servidor');
+  function removeResume() {
+    if (!activeVaga) return;
+    App.confirm(
+      'Excluir currículo',
+      'O currículo gerado para esta vaga será removido. A vaga permanece.',
+      async () => {
+        await DB.deleteCurriculo(activeVaga.uuid);
+        App.closeModal('vagaDetailModal');
+        load();
+      }
+    );
+  }
 
-    const data = await response.json();
+  // ── Prompt generation ─────────────────────────────────────────────────────
+  async function generatePrompt() {
+    if (!activeVaga) return;
 
-    if (!data.sucesso) {
-      throw new Error(data.erro || 'Erro ao extrair vaga');
+    try {
+      const [history, masterResp] = await Promise.all([
+        DB.buildHistoryMarkdown(),
+        fetch('/core/prompts/master-prompt.md'),
+      ]);
+
+      if (!history?.trim()) throw new Error('Histórico profissional vazio. Adicione experiências primeiro.');
+      if (!masterResp.ok)   throw new Error('master-prompt.md não encontrado.');
+
+      let prompt = await masterResp.text();
+      prompt = prompt
+        .replace('{{PROFESSIONAL_HISTORY}}', history)
+        .replace('{{JOB_DESCRIPTION}}', activeVaga.descricao);
+
+      document.getElementById('promptContent').textContent = prompt;
+      App.closeModal('vagaDetailModal');
+      App.openModal('promptModal');
+    } catch (err) {
+      alert('Erro ao gerar prompt: ' + err.message);
+    }
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('promptContent').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyPromptBtn');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓ Copiado!';
+      setTimeout(() => btn.innerHTML = orig, 2000);
+    });
+  }
+
+  function advanceToJson() {
+    document.getElementById('jsonInput').value = '';
+    document.getElementById('json-modal-status').classList.remove('show');
+    App.closeModal('promptModal');
+    App.openModal('jsonModal');
+  }
+
+  function backToPrompt() {
+    App.closeModal('jsonModal');
+    App.openModal('promptModal');
+  }
+
+  async function saveJson() {
+    const text = document.getElementById('jsonInput').value.trim();
+    if (!text) {
+      App.showStatus('json-modal-status','error','Cole o JSON do ChatGPT!');
+      return;
     }
 
-    document.getElementById('modal_cargo').value     = data.titulo || '';
-    document.getElementById('modal_empresa').value   = data.empresa || '';
-    document.getElementById('modal_descricao').value = data.descricao || '';
+    try {
+      const data = JSON.parse(text);
+      if (!data.elegibilidade || !data.curriculo) throw new Error('JSON inválido: faltam campos obrigatórios');
 
-    showModalStatus('statusExtracao', 'success', '✅ Vaga extraída com sucesso!');
+      await DB.saveCurriculo(activeVaga.uuid, data);
+      activeCurr = data;
 
-  } catch (err) {
-    showModalStatus('statusExtracao', 'error', '❌ ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🔍 Extrair';
+      // Save eligibility snapshot to vaga for card display
+      await DB.updateVaga(activeVaga.uuid, { _eligibility: data.elegibilidade });
+      allVagas = await DB.listVagas();
+
+      App.closeModal('jsonModal');
+
+      // Show eligibility result
+      document.getElementById('result_eligibility').innerHTML = renderEligibilityFull(data.elegibilidade);
+      App.openModal('resultModal');
+
+      load();
+    } catch (err) {
+      App.showStatus('json-modal-status','error','❌ ' + err.message);
+    }
   }
-}
 
+  // ── Edit JSON ─────────────────────────────────────────────────────────────
+  async function editJson() {
+    if (!activeVaga) return;
+    const data = await DB.getCurriculo(activeVaga.uuid);
+    if (!data) return;
+    activeCurr = data;
 
-
-// ── Geração de Prompt ─────────────────────────────────────────────────────────
-
-async function gerarPromptVaga(uuid) {
-  vagaAtualUUID = uuid;
-  const vaga = todasVagas.find(v => v.uuid === uuid);
-  if (!vaga) return;
-
-  try {
-    const [history, masterPromptRes] = await Promise.all([
-      DB.getHistory(),
-      fetch('/core/prompts/master-prompt.md'),
-    ]);
-
-    if (!history?.trim()) throw new Error('Histórico profissional vazio. Salve seus dados primeiro.');
-    if (!masterPromptRes.ok) throw new Error('Arquivo master-prompt.md não encontrado.');
-
-    let masterPrompt = await masterPromptRes.text();
-    masterPrompt = masterPrompt
-      .replace('{{PROFESSIONAL_HISTORY}}', history)
-      .replace('{{JOB_DESCRIPTION}}', vaga.descricao);
-
-    document.getElementById('generatedPrompt').textContent = masterPrompt;
-    document.getElementById('promptModal').style.display = 'flex';
-  } catch (err) {
-    alert('Erro ao gerar prompt: ' + err.message);
+    document.getElementById('jsonInput').value = JSON.stringify(data, null, 2);
+    document.getElementById('jsonModalTitle').textContent = '✏️ Editar JSON do Currículo';
+    App.closeModal('vagaDetailModal');
+    App.openModal('jsonModal');
   }
-}
 
-function closePromptModal() { document.getElementById('promptModal').style.display = 'none'; }
+  // ── View Resume ───────────────────────────────────────────────────────────
+  async function viewResume() {
+    if (!activeCurr) return;
 
-function copyPrompt() {
-  const prompt = document.getElementById('generatedPrompt').textContent;
-  navigator.clipboard.writeText(prompt).then(() => {
-    const btn = document.querySelector('[onclick="copyPrompt()"]');
-    const orig = btn.textContent;
-    btn.textContent = '✅ Copiado!';
-    setTimeout(() => btn.textContent = orig, 2000);
-  });
-}
+    const personal = (await DB.getPersonal()) || {};
+    const resumeData = { ...activeCurr.curriculo, vaga_alvo: activeCurr.vaga_alvo, personalData: personal };
 
-function avancarParaColarResposta() {
-  closePromptModal();
-  document.getElementById('resposta_vaga_uuid').value = vagaAtualUUID;
-  document.getElementById('jsonResposta').value = '';
-  resetarModalResposta();
-  document.getElementById('respostaModal').style.display = 'flex';
-}
-function closeRespostaModal() { document.getElementById('respostaModal').style.display = 'none'; }
-function voltarParaPrompt() { closeRespostaModal(); document.getElementById('promptModal').style.display = 'flex'; }
+    const titulo = buildTitle(activeCurr, personal);
+    resumeData._titulo = titulo;
 
-// ── Editar JSON do Currículo ──────────────────────────────────────────────────
+    sessionStorage.setItem('current_resume', JSON.stringify(resumeData));
+    sessionStorage.setItem('resume_titulo', titulo);
 
-async function editarJsonCurriculo(uuid) {
-  vagaAtualUUID = uuid;
-  const jsonData = await DB.getCurriculo(uuid);
-  if (!jsonData) { alert('Não foi possível carregar o JSON do currículo.'); return; }
-  document.getElementById('resposta_vaga_uuid').value = uuid;
-  document.getElementById('jsonResposta').value = JSON.stringify(jsonData, null, 2);
-  document.getElementById('respostaModalTitulo').textContent   = '✏️ Editar JSON do Currículo';
-  document.getElementById('respostaModalDescricao').textContent = 'Edite o JSON abaixo e clique em "Salvar Currículo":';
-  document.getElementById('btnGerarCurriculo').textContent     = '💾 Salvar Currículo';
-  document.getElementById('btnVoltarPrompt').style.display     = 'none';
-  document.getElementById('respostaModal').style.display = 'flex';
-}
+    const iframe = document.getElementById('resumeIframe');
+    iframe.src = '';
+    setTimeout(() => { iframe.src = 'resume.html'; }, 50);
+    document.getElementById('vizTitle').textContent = titulo.replace(/_/g,' ');
 
-// ── Geração / Salvamento ──────────────────────────────────────────────────────
-
-async function gerarCurriculo() {
-  const vagaUUID = document.getElementById('resposta_vaga_uuid').value;
-  const jsonText = document.getElementById('jsonResposta').value.trim();
-  if (!jsonText) {
-    showModalStatus('respostaStatus','error','Cole o JSON retornado pelo ChatGPT!'); return;
+    App.closeModal('vagaDetailModal');
+    App.closeModal('resultModal');
+    App.openModal('vizModal');
   }
-  try {
-    const jsonData = JSON.parse(jsonText);
-    if (!jsonData.elegibilidade || !jsonData.curriculo) throw new Error('JSON inválido: faltam campos obrigatórios');
-    await DB.saveCurriculo(vagaUUID, jsonData);
-    curriculoAtual = jsonData;
-    vagaAtualUUID  = vagaUUID;
-    resetarModalResposta();
-    closeRespostaModal();
-    mostrarCurriculoGerado();
-    await carregarVagas();
-  } catch (err) {
-    showModalStatus('respostaStatus','error','❌ ' + err.message);
+
+  function buildTitle(curr, personal) {
+    const clean = str => (str||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9\s]/g,'').trim().replace(/\s+/g,'_');
+    const name = (() => {
+      const parts = (personal?.name || '').trim().split(/\s+/);
+      return parts.length >= 2 ? `${parts[0]} ${parts[parts.length-1]}` : parts[0] || '';
+    })();
+    const emp  = curr?.vaga_alvo?.empresa || '';
+    const cargo = curr?.curriculo?.titulo_curriculo || curr?.curriculo?.header?.headline || '';
+    return ['cv', clean(name), clean(emp), clean(cargo)].filter(Boolean).join('_');
   }
-}
 
-function resetarModalResposta() {
-  document.getElementById('respostaModalTitulo').textContent   = 'Colar Resposta do ChatGPT';
-  document.getElementById('respostaModalDescricao').textContent = 'Cole aqui o JSON completo retornado pelo ChatGPT:';
-  document.getElementById('btnGerarCurriculo').textContent     = '✨ Gerar Currículo';
-  document.getElementById('btnVoltarPrompt').style.display     = 'inline-flex';
-}
+  function printResume() {
+    document.getElementById('resumeIframe')?.contentWindow?.print();
+  }
 
-// ── Exibição do Currículo ─────────────────────────────────────────────────────
-
-function mostrarCurriculoGerado() {
-  if (!curriculoAtual) return;
-  const el = curriculoAtual.elegibilidade;
-  const html = `
-    <div class="eligibility-card">
-      <div class="eligibility-score">
-        <div class="stars">${'⭐'.repeat(el.pontuacao_estrelas)}</div>
-        <div class="score-status ${getEligibilityClass(el.status)}">${el.status}</div>
-        ${el.pontuacao_percentual ? `<div style="margin-top:6px;color:#6b7280;">${el.pontuacao_percentual}% de compatibilidade</div>` : ''}
+  // ── Eligibility full render ───────────────────────────────────────────────
+  function renderEligibilityFull(eli) {
+    const stars = eli.pontuacao_estrelas || 0;
+    const cls   = getEliClass(eli.status);
+    return `
+      <div class="eligibility-score-card">
+        <div class="stars-display">${'★'.repeat(stars)}${'☆'.repeat(5-stars)}</div>
+        <div class="eligibility-status ${cls}">${App.esc(eli.status)}</div>
+        ${eli.pontuacao_percentual ? `<div class="eligibility-percent">${eli.pontuacao_percentual}% de compatibilidade</div>` : ''}
       </div>
-      <div style="margin-bottom:20px;">
-        <h4 style="margin-bottom:12px;">✅ Pontos Fortes:</h4>
-        <ul class="points-list strengths">${el.pontos_fortes.map(p=>`<li>${p}</li>`).join('')}</ul>
-      </div>
-      ${el.pontos_fracos?.length ? `
-        <div style="margin-bottom:20px;">
-          <h4 style="margin-bottom:12px;">⚠️ Pontos Fracos:</h4>
-          <ul class="points-list weaknesses">${el.pontos_fracos.map(p=>`<li>${p}</li>`).join('')}</ul>
+      ${eli.pontos_fortes?.length ? `
+        <div class="eligibility-section">
+          <h4>Pontos Fortes</h4>
+          <ul class="eligibility-list strengths">${eli.pontos_fortes.map(p=>`<li>${App.esc(p)}</li>`).join('')}</ul>
         </div>` : ''}
-      ${el.sugestoes?.length ? `
-        <div>
-          <h4 style="margin-bottom:12px;">💡 Sugestões:</h4>
-          <ul class="points-list suggestions">${el.sugestoes.map(p=>`<li>${p}</li>`).join('')}</ul>
+      ${eli.pontos_fracos?.length ? `
+        <div class="eligibility-section">
+          <h4>Pontos de Atenção</h4>
+          <ul class="eligibility-list weaknesses">${eli.pontos_fracos.map(p=>`<li>${App.esc(p)}</li>`).join('')}</ul>
         </div>` : ''}
-      <div style="margin-top:20px;padding:16px;background:white;border-radius:8px;">
-        <strong>Recomendação:</strong> ${el.recomendacao}
-      </div>
-    </div>`;
-  document.getElementById('eligibilityContent').innerHTML = html;
-  document.getElementById('curriculoModal').style.display = 'flex';
-}
+      ${eli.sugestoes?.length ? `
+        <div class="eligibility-section">
+          <h4>Sugestões</h4>
+          <ul class="eligibility-list suggestions">${eli.sugestoes.map(p=>`<li>${App.esc(p)}</li>`).join('')}</ul>
+        </div>` : ''}
+      <div class="recommendation-box">
+        <strong>Recomendação:</strong> ${App.esc(eli.recomendacao)}
+      </div>`;
+  }
 
-function getEligibilityClass(status) {
-  if (status.includes('ELEGÍVEL') && !status.includes('NÃO') && !status.includes('BAIXA')) return 'eligible';
-  if (status.includes('PARCIAL') || status.includes('BAIXA')) return 'partial';
-  return 'not-eligible';
-}
+  // ── URL Extractor ─────────────────────────────────────────────────────────
+  async function extractUrl() {
+    const url = gv('v_url');
+    const btn = document.getElementById('extractBtn');
+    if (!url) { App.showStatus('extract-status','error','Cole uma URL válida.'); return; }
 
-async function visualizarCurriculo(uuid) {
-  const jsonData = await DB.getCurriculo(uuid);
-  if (!jsonData) { alert('Currículo não encontrado'); return; }
-  curriculoAtual = jsonData;
-  vagaAtualUUID  = uuid;
-  mostrarCurriculoGerado();
-}
+    try {
+      App.showStatus('extract-status','success','⏳ Iniciando servidor…');
+      btn.disabled = true;
+      btn.textContent = 'Extraindo…';
 
-function closeCurriculoModal() { document.getElementById('curriculoModal').style.display = 'none'; }
+      const res  = await fetch('https://linkedin-job-extractor-backend.onrender.com/api/extrair-vaga', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
 
-// ── Visualizador (iframe) ─────────────────────────────────────────────────────
+      if (!res.ok) throw new Error('Erro ao acessar servidor');
+      const data = await res.json();
+      if (!data.sucesso) throw new Error(data.erro || 'Erro ao extrair');
 
-async function abrirVisualizacaoCurriculo() {
-  if (!curriculoAtual) return;
-  const personalData = (await DB.getPersonal()) || {};
+      setVals({ v_cargo: data.titulo || '', v_empresa: data.empresa || '', v_descricao: data.descricao || '' });
+      App.showStatus('extract-status','success','✓ Vaga extraída!');
+    } catch (err) {
+      App.showStatus('extract-status','error','❌ ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Extrair';
+    }
+  }
 
-  const resumeData = { ...curriculoAtual.curriculo, vaga_alvo: curriculoAtual.vaga_alvo, personalData };
-  const titulo = gerarTituloCurriculo(curriculoAtual, personalData);
-  resumeData._titulo = titulo;
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function getEliClass(status = '') {
+    if (status.includes('ELEGÍVEL') && !status.includes('NÃO') && !status.includes('BAIXA')) return 'status-eligible';
+    if (status.includes('PARCIAL') || status.includes('BAIXA')) return 'status-partial';
+    return 'status-not-eligible';
+  }
 
-  sessionStorage.setItem('current_resume', JSON.stringify(resumeData));
-  sessionStorage.setItem('resume_titulo', titulo);
+  function formatStatus(s) {
+    const map = { criada:'Criada', aplicada:'Aplicada', entrevista:'Entrevista', rejeitada:'Rejeitada', desisti:'Desisti', nao_passei:'Não Passei' };
+    return map[s] || s;
+  }
 
-  const iframe = document.getElementById('resumeIframe');
-  iframe.src = '';
-  setTimeout(() => { iframe.src = 'resume.html'; }, 50);
-  document.getElementById('visualizadorTitulo').textContent = titulo.replace(/_/g, ' ');
-  document.getElementById('visualizadorModal').style.display = 'flex';
-}
+  function gv(id)   { return document.getElementById(id)?.value?.trim() || ''; }
+  function setVals(obj) { Object.entries(obj).forEach(([id, val]) => { const el=document.getElementById(id); if(el) el.value=val||''; }); }
 
-function gerarTituloCurriculo(curriculo, personalData) {
-  const limpar = str => (str||'').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9\s]/g,'').trim().replace(/\s+/g,'_');
-  const nomeCompleto = personalData?.name || '';
-  const partes = nomeCompleto.trim().split(/\s+/);
-  const nome = partes.length >= 2 ? `${partes[0]} ${partes[partes.length-1]}` : partes[0] || '';
-  const empresa = curriculo?.vaga_alvo?.empresa || '';
-  const cargo   = curriculo?.curriculo?.titulo_curriculo || curriculo?.curriculo?.header?.headline || '';
-  return ['cv', limpar(nome), limpar(empresa), limpar(cargo)].filter(Boolean).join('_');
-}
-
-function closeVisualizadorModal() {
-  document.getElementById('visualizadorModal').style.display = 'none';
-  document.getElementById('resumeIframe').src = '';
-}
-
-function imprimirDoVisualizador() {
-  const iframe = document.getElementById('resumeIframe');
-  if (iframe.contentWindow) iframe.contentWindow.print();
-}
-
-function downloadJsonCurriculo() {
-  if (!curriculoAtual) return;
-  const blob = new Blob([JSON.stringify(curriculoAtual, null, 2)], { type:'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const vaga = todasVagas.find(v => v.uuid === vagaAtualUUID);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `curriculo_${vaga ? vaga.empresa.replace(/\s+/g,'_') : 'vaga'}_${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function showModalStatus(elementId, type, msg) {
-  const s = document.getElementById(elementId);
-  if (!s) return;
-  s.className = `status ${type}`;
-  s.textContent = msg;
-  s.style.display = 'block';
-  setTimeout(() => { s.style.display = 'none'; }, 6000);
-}
+  return {
+    load, applyFilters, goPage,
+    openNew, openEdit, saveVaga, remove, removeResume,
+    openDetail, generatePrompt, copyPrompt, advanceToJson, backToPrompt, saveJson, editJson,
+    viewResume, printResume, extractUrl,
+  };
+})();

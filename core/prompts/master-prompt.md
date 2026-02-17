@@ -1,5 +1,5 @@
 # SISTEMA DE GERAÇÃO ESTRATÉGICA DE CURRÍCULOS
-# Versão: 2.0.0
+# Versão: 3.0.0
 
 ---
 

@@ -1,191 +1,206 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Currículo Profissional</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/resume.css">
-    <style>body.in-iframe .actions-bar { display: none !important; }</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currículo Profissional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/resume.css">
+  <style>body.in-iframe .actions-bar { display: none !important; }</style>
 </head>
 <body>
-    <div class="resume-container">
-        <div class="resume-content" id="resumeContent">
-            <div style="display:flex;align-items:center;justify-content:center;height:60vh;gap:12px;color:#6b7280;">
-                <div style="width:22px;height:22px;border:3px solid #e5e7eb;border-top-color:#1e40af;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
-                Carregando currículo…
-            </div>
+  <div class="resume-container">
+    <div class="resume-content" id="resumeContent">
+      <div style="display:flex;align-items:center;justify-content:center;height:60vh;gap:12px;color:#6b7280;">
+        <div style="width:22px;height:22px;border:3px solid #e5e7eb;border-top-color:#1e40af;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+        Carregando currículo…
+      </div>
+    </div>
+  </div>
+
+  <div class="actions-bar" id="actionsBar">
+    <button type="button" onclick="window.print()" class="btn">🖨️ Imprimir / PDF</button>
+    <button type="button" onclick="window.close()" class="btn btn-close">← Fechar</button>
+  </div>
+
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const inIframe = window.self !== window.top;
+      if (inIframe) document.body.classList.add('in-iframe');
+
+      const raw = sessionStorage.getItem('current_resume');
+      if (!raw) {
+        document.getElementById('resumeContent').innerHTML = `
+          <div style="text-align:center;padding:60px 20px;">
+            <h2 style="color:#111827;margin-bottom:12px;">Nenhum currículo carregado</h2>
+            <p style="color:#6b7280;">Gere um currículo no sistema principal primeiro.</p>
+          </div>`;
+        return;
+      }
+
+      try {
+        const data     = JSON.parse(raw);
+        const personal = data.personalData || {};
+        const titulo   = buildTitle(data, personal);
+        document.title = titulo;
+        renderResume(data, personal);
+      } catch (err) {
+        document.getElementById('resumeContent').innerHTML =
+          `<p style="color:#dc2626;padding:40px;">Erro: ${err.message}</p>`;
+      }
+    });
+
+    function buildTitle(data, personal) {
+      const clean = s => (s||'').toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,'').trim().replace(/\s+/g,'_');
+      const parts = (personal?.name||'').trim().split(/\s+/);
+      const name  = parts.length >= 2 ? `${parts[0]} ${parts[parts.length-1]}` : parts[0]||'';
+      const emp   = data?.vaga_alvo?.empresa || '';
+      const cargo = data?.titulo_curriculo || data?.header?.headline || '';
+      return ['cv', clean(name), clean(emp), clean(cargo)].filter(Boolean).join('_');
+    }
+
+    window.addEventListener('beforeprint', () => { document.body.style.overflow = 'visible'; });
+    window.addEventListener('afterprint',  () => { document.body.style.overflow = '';        });
+
+    function formatPeriod(p) {
+      if (!p) return '';
+      if (typeof p === 'string') return p;
+      const s = p.start ? fmtDate(p.start) : '';
+      const e = p.end === 'current' ? 'Atual' : (p.end ? fmtDate(p.end) : '');
+      return `${s} – ${e}`;
+    }
+
+    function fmtDate(d) {
+      if (!d) return '';
+      if (d.length === 4) return d;
+      const [y, m] = d.split('-');
+      const ms = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      return `${ms[parseInt(m)-1]} ${y}`;
+    }
+
+    function esc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderResume(data, personal) {
+      const si = f => personal[`include_${f}`] === undefined ? true : personal[`include_${f}`] === true;
+      const flat = data.curriculo || data;
+      const hdr  = flat.header || {};
+
+      const name     = si('name')     ? (personal.name     || hdr.name     || '') : '';
+      const email    = si('email')    ? (personal.email    || '')                  : '';
+      const phone    = si('phone')    ? (personal.phone    || '')                  : '';
+      const linkedin = si('linkedin') ? (personal.linkedin || '')                  : '';
+      const github   = si('github')   ? (personal.github   || '')                  : '';
+      const portfolio= si('portfolio')? (personal.portfolio|| '')                  : '';
+      const headline = hdr.headline || '';
+
+      let loc = '';
+      const city  = si('city')  ? (personal.city  || '') : '';
+      const state = si('state') ? (personal.state || '') : '';
+      loc = [city, state].filter(Boolean).join(', ');
+      const remote = si('remote') && personal.remote === true;
+
+      const cc = flat.core_competencies || {};
+      const catTitles = {
+        languages_runtime:'Linguagens & Runtime', frameworks_libraries:'Frameworks & Libs',
+        databases:'Bancos de Dados', cloud_infrastructure:'Cloud & Infra',
+        messaging_queues:'Mensageria', testing_quality:'Testes & QA',
+        devops_ci_cd:'DevOps & CI/CD', methodologies:'Metodologias',
+        bancos_de_dados:'Bancos de Dados', devops_e_infra:'DevOps & Infra', seguranca:'Segurança',
+      };
+
+      const html = `
+        <div class="resume-header">
+          ${name  ? `<h1 class="name">${esc(name)}</h1>` : ''}
+          ${headline ? `<div class="headline">${esc(headline)}</div>` : ''}
+          ${email||phone ? `<div class="contact-info">
+            ${email ? `<span>e-mail: ${esc(email)}</span>` : ''}
+            ${email&&phone ? ' | ' : ''}
+            ${phone ? `<span>cel/WhatsApp: ${esc(phone)}</span>` : ''}
+          </div>` : ''}
+          ${linkedin||github||portfolio ? `<div class="contact-info">
+            ${linkedin  ? `<span>LinkedIn: ${esc(linkedin.replace(/https?:\/\//,''))}</span>`  : ''}
+            ${linkedin&&(github||portfolio) ? ' | ' : ''}
+            ${github    ? `<span>GitHub: ${esc(github.replace(/https?:\/\//,''))}</span>`      : ''}
+            ${github&&portfolio ? ' | ' : ''}
+            ${portfolio ? `<span>Portfólio: ${esc(portfolio.replace(/https?:\/\//,''))}</span>`: ''}
+          </div>` : ''}
+          ${loc||remote ? `<div class="contact-info">
+            ${loc ? `<span>${esc(loc)}</span>` : ''}
+            ${loc&&remote ? ' | ' : ''}
+            ${remote ? '<span>Disponível para trabalho remoto</span>' : ''}
+          </div>` : ''}
         </div>
-    </div>
-    <div class="actions-bar" id="actionsBar">
-        <button type="button" onclick="window.print()" class="btn">🖨️ Imprimir / Salvar PDF</button>
-        <button type="button" onclick="window.close()" class="btn">← Fechar</button>
-    </div>
-    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-    <script>
-        let resumeDataGlobal = null;
-        let personalDataGlobal = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const emIframe = window.self !== window.top;
-            if (emIframe) document.body.classList.add('in-iframe');
+        ${flat.summary ? `<div class="section"><h2 class="section-title">RESUMO PROFISSIONAL</h2><p class="summary-text">${esc(flat.summary)}</p></div>` : ''}
 
-            const resumeData = sessionStorage.getItem('current_resume');
-            if (!resumeData) {
-                document.getElementById('resumeContent').innerHTML = `
-                    <div style="text-align:center;padding:60px 20px;">
-                        <h2 style="color:#111827;margin-bottom:12px;">Nenhum currículo carregado</h2>
-                        <p style="color:#6b7280;">Gere um currículo no sistema principal primeiro.</p>
-                    </div>`;
-                return;
-            }
+        ${Object.keys(cc).some(k => cc[k]?.length) ? `
+        <div class="section"><h2 class="section-title">COMPETÊNCIAS TÉCNICAS</h2>
+          <div class="skills-grid">
+            ${Object.entries(cc).map(([k,v])=> {
+              if (!v?.length) return '';
+              return `<div class="skill-group"><strong>${catTitles[k]||k.replace(/_/g,' ')}:</strong><span> ${Array.isArray(v)?v.join(', '):v}</span></div>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
 
-            try {
-                resumeDataGlobal = JSON.parse(resumeData);
-                personalDataGlobal = resumeDataGlobal.personalData || {};
-                const titulo = gerarTituloPagina(resumeDataGlobal, personalDataGlobal);
-                document.title = titulo;
-                renderResume(resumeDataGlobal, personalDataGlobal);
-            } catch (error) {
-                document.getElementById('resumeContent').innerHTML = `
-                    <div style="text-align:center;padding:40px;">
-                        <p style="color:#dc2626;">Erro ao carregar currículo: ${error.message}</p>
-                    </div>`;
-            }
-        });
+        ${flat.experience?.length ? `
+        <div class="section"><h2 class="section-title">EXPERIÊNCIA PROFISSIONAL</h2>
+          ${flat.experience.map(exp => {
+            const role    = exp.role||exp.position||'';
+            const company = exp.company||exp.empresa||'';
+            const period  = exp.periodo||formatPeriod(exp.period);
+            let hi = exp.highlights||exp.descricao||[];
+            if (typeof hi==='string') hi=[hi];
+            return `<div class="experience-item">
+              <div class="exp-header">
+                <div><h3 class="exp-role">${esc(role)}</h3>${company?`<div class="exp-company">${esc(company)}</div>`:''}</div>
+                <div class="exp-period">${esc(period)}</div>
+              </div>
+              ${hi.length?`<ul class="highlights">${hi.map(h=>`<li>${esc(h)}</li>`).join('')}</ul>`:''}
+              ${exp.stack?.length?`<div style="margin-top:8px;font-size:13px;color:#6b7280;"><strong>Stack:</strong> ${esc(exp.stack.join(', '))}</div>`:''}
+            </div>`;
+          }).join('')}
+        </div>` : ''}
 
-        function gerarTituloPagina(data, personalData) {
-            const limpar = str => (str||'').toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-                .replace(/[^a-z0-9\s]/g,'').trim().replace(/\s+/g,'_');
-            const nomeCompleto = personalData?.name || '';
-            const partes = nomeCompleto.trim().split(/\s+/);
-            const nome = partes.length >= 2 ? `${partes[0]} ${partes[partes.length-1]}` : partes[0]||'';
-            const empresa = data?.vaga_alvo?.empresa || data?.curriculo?.vaga_alvo?.empresa || '';
-            const cargo = data?.titulo_curriculo || data?.curriculo?.titulo_curriculo || data?.header?.headline || data?.curriculo?.header?.headline || '';
-            return ['cv', limpar(nome), limpar(empresa), limpar(cargo)].filter(Boolean).join('_');
-        }
+        ${flat.projects?.length ? `
+        <div class="section"><h2 class="section-title">PROJETOS</h2>
+          ${flat.projects.map(p=>`<div class="project-item">
+            <h3 class="project-name">${esc(p.name)}</h3>
+            ${p.description?`<p>${esc(p.description)}</p>`:''}
+            ${p.impact?.length?`<ul class="project-impact">${p.impact.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>`:''}
+          </div>`).join('')}
+        </div>` : ''}
 
-        window.addEventListener('beforeprint', () => { document.body.style.overflow = 'visible'; });
-        window.addEventListener('afterprint',  () => { document.body.style.overflow = 'auto'; });
+        ${flat.education?.length ? `
+        <div class="section"><h2 class="section-title">FORMAÇÃO ACADÊMICA</h2>
+          ${flat.education.map(e=>`<div class="education-item">
+            <strong>${esc(e.degree||e.curso||'')}</strong><br>
+            ${esc(e.institution||e.instituicao||'')}${e.period?` • ${formatPeriod(e.period)}`:''}
+          </div>`).join('')}
+        </div>` : ''}
 
-        function formatPeriod(period) {
-            if (!period) return '';
-            if (typeof period === 'string') return period;
-            const start = period.start ? formatDate(period.start) : '';
-            const end = period.end === 'current' ? 'Atual' : (period.end ? formatDate(period.end) : '');
-            return `${start} – ${end}`;
-        }
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            if (dateStr.length === 4) return dateStr;
-            const [year, month] = dateStr.split('-');
-            const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-            return `${months[parseInt(month)-1]} ${year}`;
-        }
+        ${flat.certifications?.length ? `
+        <div class="section"><h2 class="section-title">CERTIFICAÇÕES</h2>
+          ${flat.certifications.map(c=>`<div class="cert-item">
+            <strong>${esc(c.name)}</strong> • ${esc(c.issuer)}${c.date?` • ${fmtDate(c.date)}`:''}
+          </div>`).join('')}
+        </div>` : ''}
 
-        function renderResume(data, personalData) {
-            const personal = personalData || {};
-            const shouldInclude = f => personal[`include_${f}`] === undefined ? true : personal[`include_${f}`] === true;
-            const flat = data.curriculo || data;
-            const header = flat.header || {};
-            const meta   = flat.meta   || {};
+        ${flat.languages?.length ? `
+        <div class="section"><h2 class="section-title">IDIOMAS</h2>
+          <div class="languages">
+            ${flat.languages.map(l=>`<span><strong>${esc(l.language||l.idioma||'')}:</strong> ${esc(l.proficiency||l.nivel||'')}</span>`).join(' • ')}
+          </div>
+        </div>` : ''}
+      `;
 
-            const name      = shouldInclude('name')      ? (personal.name      || header.name      || '') : '';
-            const email     = shouldInclude('email')     ? (personal.email     || header.email     || '') : '';
-            const phone     = shouldInclude('phone')     ? (personal.phone     || header.phone     || '') : '';
-            const linkedin  = shouldInclude('linkedin')  ? (personal.linkedin  || header.linkedin  || '') : '';
-            const github    = shouldInclude('github')    ? (personal.github    || header.github    || '') : '';
-            const portfolio = shouldInclude('portfolio') ? (personal.portfolio || header.portfolio || '') : '';
-            const headline  = header.headline || meta.cargo_alvo || 'Desenvolvedor';
-
-            let location = '';
-            if (shouldInclude('city') || shouldInclude('state')) {
-                const city  = shouldInclude('city')  ? (personal.city  || '') : '';
-                const state = shouldInclude('state') ? (personal.state || '') : '';
-                location = [city, state].filter(Boolean).join(', ');
-            }
-            const showRemote = shouldInclude('remote') && personal.remote === true;
-
-            const html = `
-                <div class="resume-header">
-                    ${name ? `<h1 class="name">${name}</h1>` : ''}
-                    <div class="headline">${headline}</div>
-                    ${email || phone ? `<div class="contact-info">
-                        ${email ? `<span>e-mail: ${email}</span>` : ''}
-                        ${email && phone ? ' | ' : ''}
-                        ${phone ? `<span>celular e WhatsApp: ${phone}</span>` : ''}
-                    </div>` : ''}
-                    ${linkedin || github || portfolio ? `<div class="contact-info">
-                        ${linkedin  ? `<span>LinkedIn: ${linkedin.replace(/https?:\/\//,'')}</span>`  : ''}
-                        ${linkedin && (github || portfolio) ? ' | ' : ''}
-                        ${github    ? `<span>GitHub: ${github.replace(/https?:\/\//,'')}</span>`      : ''}
-                        ${github && portfolio ? ' | ' : ''}
-                        ${portfolio ? `<span>Portfólio: ${portfolio.replace(/https?:\/\//,'')}</span>` : ''}
-                    </div>` : ''}
-                    ${location || showRemote ? `<div class="contact-info">
-                        ${location ? `<span>${location}</span>` : ''}
-                        ${location && showRemote ? ' | ' : ''}
-                        ${showRemote ? '<span>Disponível para trabalho remoto</span>' : ''}
-                    </div>` : ''}
-                </div>
-                ${flat.summary ? `<div class="section"><h2 class="section-title">RESUMO PROFISSIONAL</h2><p class="summary-text">${flat.summary}</p></div>` : ''}
-                ${flat.core_competencies ? `<div class="section"><h2 class="section-title">COMPETÊNCIAS TÉCNICAS</h2><div class="skills-grid">
-                    ${Object.entries(flat.core_competencies).map(([key, values]) => {
-                        if (!values || values.length === 0) return '';
-                        const titles = {
-                            languages_runtime:'Linguagens & Runtime', frameworks_libraries:'Frameworks & Bibliotecas',
-                            databases:'Bancos de Dados', bancos_de_dados:'Bancos de Dados',
-                            cloud_infrastructure:'Cloud & Infraestrutura', devops_e_infra:'DevOps & Infraestrutura',
-                            messaging_queues:'Mensageria & Filas', testing_quality:'Testes & Qualidade',
-                            devops_ci_cd:'DevOps & CI/CD', methodologies:'Metodologias', seguranca:'Segurança'
-                        };
-                        return `<div class="skill-group"><strong>${titles[key]||key.replace(/_/g,' ')}:</strong><span> ${Array.isArray(values)?values.join(', '):values}</span></div>`;
-                    }).join('')}
-                </div></div>` : ''}
-                ${flat.experience?.length ? `<div class="section"><h2 class="section-title">EXPERIÊNCIA PROFISSIONAL</h2>
-                    ${flat.experience.map(exp => {
-                        const role = exp.role||exp.position||'Desenvolvedor';
-                        const company = exp.company||exp.empresa||'';
-                        const period = exp.periodo||formatPeriod(exp.period);
-                        let highlights = exp.highlights||exp.descricao||[];
-                        if (typeof highlights === 'string') highlights = [highlights];
-                        return `<div class="experience-item">
-                            <div class="exp-header">
-                                <div><h3 class="exp-role">${role}</h3>${company?`<div class="exp-company">${company}</div>`:''}</div>
-                                <div class="exp-period">${period}</div>
-                            </div>
-                            ${highlights.length ? `<ul class="highlights">${highlights.map(h=>`<li>${h}</li>`).join('')}</ul>` : ''}
-                            ${exp.stack?.length ? `<div style="margin-top:8px;font-size:13px;color:#6b7280;"><strong>Stack:</strong> ${exp.stack.join(', ')}</div>` : ''}
-                        </div>`;
-                    }).join('')}
-                </div>` : ''}
-                ${flat.projects?.length ? `<div class="section"><h2 class="section-title">PROJETOS EM DESTAQUE</h2>
-                    ${flat.projects.map(proj => `<div class="project-item">
-                        <h3 class="project-name">${proj.name}</h3>
-                        ${proj.description ? `<p>${proj.description}</p>` : ''}
-                        ${proj.impact?.length ? `<ul class="project-impact">${proj.impact.map(i=>`<li>${i}</li>`).join('')}</ul>` : ''}
-                    </div>`).join('')}
-                </div>` : ''}
-                ${flat.education?.length ? `<div class="section"><h2 class="section-title">FORMAÇÃO ACADÊMICA</h2>
-                    ${flat.education.map(edu => `<div class="education-item">
-                        <strong>${edu.degree||edu.curso}</strong><br>
-                        ${edu.institution||edu.instituicao}${edu.period?` • ${formatPeriod(edu.period)}`:''}
-                    </div>`).join('')}
-                </div>` : ''}
-                ${flat.certifications?.length ? `<div class="section"><h2 class="section-title">CERTIFICAÇÕES</h2>
-                    ${flat.certifications.map(cert => `<div class="cert-item">
-                        <strong>${cert.name}</strong> • ${cert.issuer}${cert.date?` • ${formatDate(cert.date)}`:''}
-                    </div>`).join('')}
-                </div>` : ''}
-                ${flat.languages?.length ? `<div class="section"><h2 class="section-title">IDIOMAS</h2>
-                    <div class="languages">
-                        ${flat.languages.map(lang => `<span><strong>${lang.language||lang.idioma}:</strong> ${lang.proficiency||lang.nivel}</span>`).join(' • ')}
-                    </div>
-                </div>` : ''}`;
-            document.getElementById('resumeContent').innerHTML = html;
-        }
-    </script>
+      document.getElementById('resumeContent').innerHTML = html;
+    }
+  </script>
 </body>
 </html>

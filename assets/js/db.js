@@ -1,16 +1,10 @@
 /**
- * db.js — Camada de persistência via IndexedDB
- * Substitui completamente o server.py + arquivos JSON do data/
- *
- * Stores:
- *   personal     — dados pessoais (single object, key = 'data')
- *   history      — histórico profissional markdown (single string, key = 'content')
- *   vagas        — lista de vagas (key = uuid)
- *   curriculos   — currículos gerados (key = vaga_uuid)
+ * db.js — IndexedDB persistence layer
+ * Extended to support structured history items, education, languages, certifications
  */
 
-const DB_NAME = 'curriculos-estrategicos';
-const DB_VERSION = 1;
+const DB_NAME    = 'curriculos-estrategicos';
+const DB_VERSION = 2;
 
 let _db = null;
 
@@ -18,13 +12,37 @@ function openDB() {
   if (_db) return Promise.resolve(_db);
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
+
     req.onupgradeneeded = (e) => {
-      const db = e.target.result;
+      const db  = e.target.result;
+      const old = e.oldVersion;
+
+      // Always-needed stores
       if (!db.objectStoreNames.contains('personal'))   db.createObjectStore('personal');
+      if (!db.objectStoreNames.contains('vagas'))      db.createObjectStore('vagas',      { keyPath: 'uuid' });
+      if (!db.objectStoreNames.contains('curriculos')) db.createObjectStore('curriculos', { keyPath: 'vaga_uuid' });
+
+      // v1 legacy store — kept for migration
       if (!db.objectStoreNames.contains('history'))    db.createObjectStore('history');
-      if (!db.objectStoreNames.contains('vagas'))      db.createObjectStore('vagas',     { keyPath: 'uuid' });
-      if (!db.objectStoreNames.contains('curriculos')) db.createObjectStore('curriculos',{ keyPath: 'vaga_uuid' });
+
+      // v2 structured history
+      if (!db.objectStoreNames.contains('experiences')) {
+        const s = db.createObjectStore('experiences', { keyPath: 'id', autoIncrement: true });
+        s.createIndex('startDate', 'startDate', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('education')) {
+        const s = db.createObjectStore('education', { keyPath: 'id', autoIncrement: true });
+        s.createIndex('startDate', 'startDate', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('certifications')) {
+        const s = db.createObjectStore('certifications', { keyPath: 'id', autoIncrement: true });
+        s.createIndex('date', 'date', { unique: false });
+      }
+      if (!db.objectStoreNames.contains('languages')) {
+        db.createObjectStore('languages', { keyPath: 'id', autoIncrement: true });
+      }
     };
+
     req.onsuccess = (e) => { _db = e.target.result; resolve(_db); };
     req.onerror   = (e) => reject(e.target.error);
   });
@@ -50,6 +68,14 @@ function idbPut(store, value, key) {
   }));
 }
 
+function idbAdd(store, value) {
+  return tx(store, 'readwrite').then(s => new Promise((res, rej) => {
+    const r = s.add(value);
+    r.onsuccess = () => res(r.result);
+    r.onerror   = () => rej(r.error);
+  }));
+}
+
 function idbDelete(store, key) {
   return tx(store, 'readwrite').then(s => new Promise((res, rej) => {
     const r = s.delete(key);
@@ -66,32 +92,95 @@ function idbGetAll(store) {
   }));
 }
 
-// ── API pública — mesma interface que o server.py expunha ────────────────────
+// ── Public API ────────────────────────────────────────────────────────────────
 
 const DB = {
 
-  // ── Dados pessoais ──────────────────────────────────────────────────────
-  async getPersonal() {
-    return idbGet('personal', 'data');
-  },
-  async savePersonal(data) {
-    return idbPut('personal', data, 'data');
-  },
+  // ── Personal data ──────────────────────────────────────────────────────
+  getPersonal() { return idbGet('personal', 'data'); },
+  savePersonal(data) { return idbPut('personal', data, 'data'); },
 
-  // ── Histórico profissional (markdown) ───────────────────────────────────
+  // ── Legacy history (markdown) ───────────────────────────────────────────
   async getHistory() {
     const val = await idbGet('history', 'content');
     return val ?? '';
   },
-  async saveHistory(text) {
-    return idbPut('history', text, 'content');
+  saveHistory(text) { return idbPut('history', text, 'content'); },
+
+  // ── Experiences ─────────────────────────────────────────────────────────
+  async listExperiences() {
+    const items = await idbGetAll('experiences');
+    return items.sort((a, b) => {
+      const da = a.startDate || '0000-00';
+      const db = b.startDate || '0000-00';
+      return db.localeCompare(da); // newest first
+    });
   },
 
-  // ── Vagas ───────────────────────────────────────────────────────────────
+  async saveExperience(exp) {
+    if (exp.id) {
+      await idbPut('experiences', exp);
+      return exp;
+    }
+    const id = await idbAdd('experiences', exp);
+    return { ...exp, id };
+  },
+
+  deleteExperience(id) { return idbDelete('experiences', id); },
+
+  // ── Education ────────────────────────────────────────────────────────────
+  async listEducation() {
+    const items = await idbGetAll('education');
+    return items.sort((a, b) => {
+      const da = a.startDate || '0000';
+      const db = b.startDate || '0000';
+      return db.localeCompare(da);
+    });
+  },
+
+  async saveEducation(edu) {
+    if (edu.id) { await idbPut('education', edu); return edu; }
+    const id = await idbAdd('education', edu);
+    return { ...edu, id };
+  },
+
+  deleteEducation(id) { return idbDelete('education', id); },
+
+  // ── Certifications ────────────────────────────────────────────────────────
+  async listCertifications() {
+    const items = await idbGetAll('certifications');
+    return items.sort((a, b) => {
+      const da = a.date || '0000-00';
+      const db = b.date || '0000-00';
+      return db.localeCompare(da);
+    });
+  },
+
+  async saveCertification(cert) {
+    if (cert.id) { await idbPut('certifications', cert); return cert; }
+    const id = await idbAdd('certifications', cert);
+    return { ...cert, id };
+  },
+
+  deleteCertification(id) { return idbDelete('certifications', id); },
+
+  // ── Languages ─────────────────────────────────────────────────────────────
+  async listLanguages() { return idbGetAll('languages'); },
+
+  async saveLanguage(lang) {
+    if (lang.id) { await idbPut('languages', lang); return lang; }
+    const id = await idbAdd('languages', lang);
+    return { ...lang, id };
+  },
+
+  deleteLanguage(id) { return idbDelete('languages', id); },
+
+  // ── Vagas ─────────────────────────────────────────────────────────────────
   async listVagas() {
     const vagas = await idbGetAll('vagas');
     return vagas.sort((a, b) => new Date(b.data_cadastro) - new Date(a.data_cadastro));
   },
+
   async createVaga({ empresa, cargo, descricao }) {
     const vaga = {
       uuid: crypto.randomUUID(),
@@ -105,6 +194,7 @@ const DB = {
     await idbPut('vagas', vaga);
     return vaga;
   },
+
   async updateVaga(uuid, fields) {
     const vaga = await idbGet('vagas', uuid);
     if (!vaga) throw new Error('Vaga não encontrada');
@@ -112,47 +202,129 @@ const DB = {
     await idbPut('vagas', updated);
     return updated;
   },
+
   async deleteVaga(uuid) {
     await idbDelete('vagas', uuid);
-    // Apagar currículo associado
     try { await idbDelete('curriculos', uuid); } catch (_) {}
   },
 
-  // ── Currículos ──────────────────────────────────────────────────────────
+  // ── Curriculos ────────────────────────────────────────────────────────────
   async getCurriculo(vagaUuid) {
     const doc = await idbGet('curriculos', vagaUuid);
     if (!doc) return null;
-    // Retornar sem o campo de chave interno
     const { vaga_uuid, ...rest } = doc;
     return rest;
   },
-  async saveCurriculo(vagaUuid, data) {
+
+  saveCurriculo(vagaUuid, data) {
     return idbPut('curriculos', { vaga_uuid: vagaUuid, ...data });
   },
-  async deleteCurriculo(vagaUuid) {
-    return idbDelete('curriculos', vagaUuid);
-  },
+
+  deleteCurriculo(vagaUuid) { return idbDelete('curriculos', vagaUuid); },
+
   async existsCurriculo(vagaUuid) {
     const doc = await idbGet('curriculos', vagaUuid);
     return doc !== null;
   },
 
-  // ── Export / Import de backup ───────────────────────────────────────────
-  async exportBackup() {
-    const [personal, history, vagas, curriculos] = await Promise.all([
-      this.getPersonal(),
+  // ── Build structured history markdown for prompts ─────────────────────────
+  async buildHistoryMarkdown() {
+    // Prefer legacy history if present and structured history empty
+    const [legacy, exps, edu, certs, langs] = await Promise.all([
       this.getHistory(),
-      this.listVagas(),
-      idbGetAll('curriculos'),
+      this.listExperiences(),
+      this.listEducation(),
+      this.listCertifications(),
+      this.listLanguages(),
     ]);
-    return { version: 1, exportedAt: new Date().toISOString(), personal, history, vagas, curriculos };
+
+    if (exps.length === 0 && edu.length === 0) {
+      // Fallback to legacy markdown
+      return legacy;
+    }
+
+    let md = '';
+
+    if (exps.length) {
+      md += '## EXPERIÊNCIA PROFISSIONAL\n\n';
+      for (const e of exps) {
+        const period = `${formatDateMD(e.startDate)} – ${e.current ? 'Atual' : formatDateMD(e.endDate)}`;
+        md += `### ${e.company} — ${e.role} | ${period}\n\n`;
+        if (e.location) md += `📍 ${e.location}\n\n`;
+        if (e.stack) md += `**Stack:** ${e.stack}\n\n`;
+        if (e.description) md += `${e.description}\n\n`;
+        md += '\n';
+      }
+    }
+
+    if (edu.length) {
+      md += '## FORMAÇÃO ACADÊMICA\n\n';
+      for (const e of edu) {
+        md += `### ${e.institution} — ${e.degree}\n`;
+        if (e.startDate || e.endDate) md += `${e.startDate || ''} – ${e.endDate || ''}\n`;
+        if (e.notes) md += `${e.notes}\n`;
+        md += '\n';
+      }
+    }
+
+    if (certs.length) {
+      md += '## CERTIFICAÇÕES\n\n';
+      for (const c of certs) {
+        md += `- **${c.name}** — ${c.issuer}${c.date ? ` (${c.date})` : ''}\n`;
+      }
+      md += '\n';
+    }
+
+    if (langs.length) {
+      md += '## IDIOMAS\n\n';
+      for (const l of langs) {
+        md += `- ${l.language}: ${l.proficiency}\n`;
+      }
+      md += '\n';
+    }
+
+    return md.trim() || legacy;
   },
+
+  // ── Backup ────────────────────────────────────────────────────────────────
+  async exportBackup() {
+    const [personal, history, vagas, curriculos, experiences, education, certifications, languages] =
+      await Promise.all([
+        this.getPersonal(),
+        this.getHistory(),
+        this.listVagas(),
+        idbGetAll('curriculos'),
+        this.listExperiences(),
+        this.listEducation(),
+        this.listCertifications(),
+        this.listLanguages(),
+      ]);
+    return {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      personal, history, vagas, curriculos,
+      experiences, education, certifications, languages,
+    };
+  },
+
   async importBackup(backup) {
-    if (backup.personal)  await this.savePersonal(backup.personal);
-    if (backup.history)   await this.saveHistory(backup.history);
-    if (backup.vagas)     for (const v of backup.vagas)     await idbPut('vagas', v);
-    if (backup.curriculos) for (const c of backup.curriculos) await idbPut('curriculos', c);
+    if (backup.personal)      await this.savePersonal(backup.personal);
+    if (backup.history)       await this.saveHistory(backup.history);
+    if (backup.vagas)         for (const v of backup.vagas)          await idbPut('vagas', v);
+    if (backup.curriculos)    for (const c of backup.curriculos)     await idbPut('curriculos', c);
+    if (backup.experiences)   for (const e of backup.experiences)    await idbPut('experiences', e);
+    if (backup.education)     for (const e of backup.education)      await idbPut('education', e);
+    if (backup.certifications) for (const c of backup.certifications) await idbPut('certifications', c);
+    if (backup.languages)     for (const l of backup.languages)      await idbPut('languages', l);
   },
 };
+
+function formatDateMD(str) {
+  if (!str) return '';
+  if (str.length === 4) return str;
+  const [y, m] = str.split('-');
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return `${months[parseInt(m)-1]} ${y}`;
+}
 
 window.DB = DB;

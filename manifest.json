@@ -4,8 +4,8 @@
   "description": "Geração estratégica de currículos personalizados com IA",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#2563eb",
+  "background_color": "#0d0f14",
+  "theme_color": "#0d0f14",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
   "icons": [
@@ -22,21 +22,13 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/icons/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
   "categories": ["productivity", "utilities"],
   "shortcuts": [
     {
       "name": "Nova Vaga",
       "short_name": "Nova Vaga",
       "description": "Cadastrar nova oportunidade",
-      "url": "/?tab=vagas&action=nova",
+      "url": "/?action=nova-vaga",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
