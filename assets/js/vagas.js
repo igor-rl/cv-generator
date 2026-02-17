@@ -17,58 +17,45 @@ async function carregarVagas() {
     try {
         const res = await fetch('/api/vagas');
         todasVagas = await res.json();
-        
-        // Ordenar por data de cadastro (mais recentes primeiro)
         todasVagas.sort((a, b) => new Date(b.data_cadastro) - new Date(a.data_cadastro));
-        
         filterVagas();
     } catch (err) {
         console.error('Erro ao carregar vagas:', err);
-        showStatus('error', 'Erro ao carregar vagas');
     }
 }
 
 function filterVagas() {
     const statusFilter = document.getElementById('statusFilter').value;
-    
-    if (statusFilter === 'all') {
-        vagasFiltradas = [...todasVagas];
-    } else {
-        vagasFiltradas = todasVagas.filter(v => v.status === statusFilter);
-    }
-    
+    vagasFiltradas = statusFilter === 'all' ? [...todasVagas] : todasVagas.filter(v => v.status === statusFilter);
     paginaAtual = 1;
     renderizarVagas();
 }
 
 function renderizarVagas() {
     const startIndex = (paginaAtual - 1) * vagasPorPagina;
-    const endIndex = startIndex + vagasPorPagina;
-    const vagasPagina = vagasFiltradas.slice(startIndex, endIndex);
-    
+    const vagasPagina = vagasFiltradas.slice(startIndex, startIndex + vagasPorPagina);
     const container = document.getElementById('vagasList');
-    
+
     if (vagasFiltradas.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
                 <p>Nenhuma vaga encontrada.</p>
                 <button class="btn btn-primary" style="margin-top: 16px;" onclick="openNovaVagaModal()">➕ Criar Primeira Vaga</button>
-            </div>
-        `;
+            </div>`;
         document.getElementById('pagination').innerHTML = '';
         return;
     }
-    
-    container.innerHTML = vagasPagina.map(vaga => `
+
+    container.innerHTML = vagasPagina.map(vaga => {
+        const temCurriculo = existeCurriculo(vaga.uuid);
+        return `
         <div class="vaga-card">
             <div class="vaga-header">
                 <div>
                     <div class="vaga-title">${vaga.cargo}</div>
                     <div class="vaga-empresa">${vaga.empresa}</div>
                 </div>
-                <div class="vaga-status status-${vaga.status}">
-                    ${formatarStatus(vaga.status)}
-                </div>
+                <div class="vaga-status status-${vaga.status}">${formatarStatus(vaga.status)}</div>
             </div>
             <div class="vaga-meta">
                 <span>📅 Cadastrada em ${formatarData(vaga.data_cadastro)}</span>
@@ -76,83 +63,60 @@ function renderizarVagas() {
             </div>
             <div class="vaga-descricao">${vaga.descricao.substring(0, 200)}...</div>
             <div class="vaga-actions">
-                <button class="btn btn-primary btn-small" onclick="gerarPromptVaga('${vaga.uuid}')">
-                    🚀 Gerar Currículo
-                </button>
-                ${existeCurriculo(vaga.uuid) ? `
+                ${temCurriculo ? `
                     <button class="btn btn-success btn-small" onclick="visualizarCurriculo('${vaga.uuid}')">
                         👁️ Ver Currículo
                     </button>
-                ` : ''}
-                <button class="btn btn-secondary btn-small" onclick="editarVaga('${vaga.uuid}')">
-                    ✏️ Editar
-                </button>
-                <button class="btn btn-secondary btn-small" onclick="verDescricao('${vaga.uuid}')">
-                    📄 Ver Descrição
-                </button>
-                <button class="btn btn-danger btn-small" onclick="excluirVaga('${vaga.uuid}')">
-                    🗑️ Excluir
-                </button>
+                    <button class="btn btn-primary btn-small" onclick="editarJsonCurriculo('${vaga.uuid}')">
+                        ✏️ Editar JSON
+                    </button>
+                    <button class="btn btn-danger btn-small" onclick="excluirCurriculo('${vaga.uuid}')">
+                        🗑️ Excluir Currículo
+                    </button>
+                ` : `
+                    <button class="btn btn-primary btn-small" onclick="gerarPromptVaga('${vaga.uuid}')">
+                        🚀 Gerar Currículo
+                    </button>
+                `}
+                <button class="btn btn-secondary btn-small" onclick="editarVaga('${vaga.uuid}')">✏️ Editar Vaga</button>
+                <button class="btn btn-secondary btn-small" onclick="verDescricao('${vaga.uuid}')">📄 Ver Descrição</button>
+                <button class="btn btn-danger btn-small" onclick="excluirVaga('${vaga.uuid}')">🗑️ Excluir Vaga</button>
             </div>
-        </div>
-    `).join('');
-    
+        </div>`;
+    }).join('');
+
     renderizarPaginacao();
 }
 
 function renderizarPaginacao() {
     const totalPaginas = Math.ceil(vagasFiltradas.length / vagasPorPagina);
     const container = document.getElementById('pagination');
-    
-    if (totalPaginas <= 1) {
-        container.innerHTML = '';
-        return;
-    }
-    
-    let html = '';
-    
-    // Botão anterior
-    html += `<button class="page-btn" ${paginaAtual === 1 ? 'disabled' : ''} onclick="mudarPagina(${paginaAtual - 1})">←</button>`;
-    
-    // Números de página
+    if (totalPaginas <= 1) { container.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" ${paginaAtual === 1 ? 'disabled' : ''} onclick="mudarPagina(${paginaAtual - 1})">←</button>`;
     for (let i = 1; i <= totalPaginas; i++) {
         html += `<button class="page-btn ${paginaAtual === i ? 'active' : ''}" onclick="mudarPagina(${i})">${i}</button>`;
     }
-    
-    // Botão próximo
     html += `<button class="page-btn" ${paginaAtual === totalPaginas ? 'disabled' : ''} onclick="mudarPagina(${paginaAtual + 1})">→</button>`;
-    
     container.innerHTML = html;
 }
 
-function mudarPagina(pagina) {
-    paginaAtual = pagina;
-    renderizarVagas();
-}
+function mudarPagina(pagina) { paginaAtual = pagina; renderizarVagas(); }
 
 function formatarStatus(status) {
-    const statusMap = {
-        'criada': 'Criada',
-        'aplicada': 'Aplicada',
-        'entrevista': 'Em Entrevista',
-        'rejeitada': 'Rejeitada',
-        'desisti': 'Desisti',
-        'nao_passei': 'Não Passei'
-    };
-    return statusMap[status] || status;
+    const map = { 'criada': 'Criada', 'aplicada': 'Aplicada', 'entrevista': 'Em Entrevista', 'rejeitada': 'Rejeitada', 'desisti': 'Desisti', 'nao_passei': 'Não Passei' };
+    return map[status] || status;
 }
 
 function formatarData(isoDate) {
-    const date = new Date(isoDate);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date(isoDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function existeCurriculo(vagaUUID) {
-    // Verificar se existe currículo salvo no localStorage
     return localStorage.getItem(`curriculo_${vagaUUID}`) !== null;
 }
 
-// =============== MODAIS ===============
+// =============== MODAIS DE VAGA ===============
 
 function openNovaVagaModal() {
     document.getElementById('novaVagaModal').style.display = 'flex';
@@ -161,36 +125,28 @@ function openNovaVagaModal() {
     document.getElementById('modal_descricao').value = '';
 }
 
-function closeNovaVagaModal() {
-    document.getElementById('novaVagaModal').style.display = 'none';
-}
+function closeNovaVagaModal() { document.getElementById('novaVagaModal').style.display = 'none'; }
 
 async function salvarNovaVaga() {
     const empresa = document.getElementById('modal_empresa').value.trim();
     const cargo = document.getElementById('modal_cargo').value.trim();
     const descricao = document.getElementById('modal_descricao').value.trim();
-    
+
     if (!empresa || !cargo || !descricao) {
         showModalStatus('modalStatus', 'error', 'Todos os campos são obrigatórios!');
         return;
     }
-    
+
     try {
         const res = await fetch('/api/vagas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ empresa, cargo, descricao })
         });
-        
         if (!res.ok) throw new Error('Erro ao salvar vaga');
-        
         showModalStatus('modalStatus', 'success', '✅ Vaga criada com sucesso!');
-        setTimeout(() => {
-            closeNovaVagaModal();
-            carregarVagas();
-        }, 1000);
+        setTimeout(() => { closeNovaVagaModal(); carregarVagas(); }, 1000);
     } catch (err) {
-        console.error(err);
         showModalStatus('modalStatus', 'error', '❌ Erro ao criar vaga');
     }
 }
@@ -198,19 +154,15 @@ async function salvarNovaVaga() {
 function editarVaga(uuid) {
     const vaga = todasVagas.find(v => v.uuid === uuid);
     if (!vaga) return;
-    
     document.getElementById('edit_uuid').value = vaga.uuid;
     document.getElementById('edit_empresa').value = vaga.empresa;
     document.getElementById('edit_cargo').value = vaga.cargo;
     document.getElementById('edit_descricao').value = vaga.descricao;
     document.getElementById('edit_status').value = vaga.status;
-    
     document.getElementById('editVagaModal').style.display = 'flex';
 }
 
-function closeEditVagaModal() {
-    document.getElementById('editVagaModal').style.display = 'none';
-}
+function closeEditVagaModal() { document.getElementById('editVagaModal').style.display = 'none'; }
 
 async function salvarEdicaoVaga() {
     const uuid = document.getElementById('edit_uuid').value;
@@ -218,28 +170,22 @@ async function salvarEdicaoVaga() {
     const cargo = document.getElementById('edit_cargo').value.trim();
     const descricao = document.getElementById('edit_descricao').value.trim();
     const status = document.getElementById('edit_status').value;
-    
+
     if (!empresa || !cargo || !descricao) {
         showModalStatus('editModalStatus', 'error', 'Todos os campos são obrigatórios!');
         return;
     }
-    
+
     try {
         const res = await fetch(`/api/vagas/update/${uuid}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ empresa, cargo, descricao, status })
         });
-        
         if (!res.ok) throw new Error('Erro ao atualizar vaga');
-        
         showModalStatus('editModalStatus', 'success', '✅ Vaga atualizada com sucesso!');
-        setTimeout(() => {
-            closeEditVagaModal();
-            carregarVagas();
-        }, 1000);
+        setTimeout(() => { closeEditVagaModal(); carregarVagas(); }, 1000);
     } catch (err) {
-        console.error(err);
         showModalStatus('editModalStatus', 'error', '❌ Erro ao atualizar vaga');
     }
 }
@@ -247,46 +193,62 @@ async function salvarEdicaoVaga() {
 function verDescricao(uuid) {
     const vaga = todasVagas.find(v => v.uuid === uuid);
     if (!vaga) return;
-    
-    alert(`Empresa: ${vaga.empresa}\nCargo: ${vaga.cargo}\n\n${vaga.descricao}`);
+    document.getElementById('descricaoTexto').textContent = vaga.descricao;
+    document.getElementById('descricaoTitulo').textContent = `${vaga.cargo} — ${vaga.empresa}`;
+    document.getElementById('descricaoModal').style.display = 'flex';
 }
+
+function closeDescricaoModal() { document.getElementById('descricaoModal').style.display = 'none'; }
 
 async function excluirVaga(uuid) {
     const vaga = todasVagas.find(v => v.uuid === uuid);
     if (!vaga) return;
-    
-    const confirmacao = confirm(
-        `⚠️ ATENÇÃO!\n\n` +
-        `Deseja realmente excluir esta vaga?\n\n` +
-        `Empresa: ${vaga.empresa}\n` +
-        `Cargo: ${vaga.cargo}\n\n` +
-        `Esta ação NÃO pode ser desfeita.\n` +
-        `O currículo gerado para esta vaga também será excluído.`
+
+    // Usar modal de confirmação em vez de confirm()
+    abrirConfirmacao(
+        `Excluir vaga: ${vaga.cargo} — ${vaga.empresa}`,
+        'Esta ação não pode ser desfeita. O currículo gerado para esta vaga também será excluído.',
+        async () => {
+            try {
+                const res = await fetch(`/api/vagas/delete/${uuid}`, { method: 'POST' });
+                if (!res.ok) throw new Error('Erro ao excluir vaga');
+                localStorage.removeItem(`curriculo_${uuid}`);
+                await carregarVagas();
+            } catch (err) {
+                console.error('Erro ao excluir vaga:', err);
+            }
+        }
     );
-    
-    if (!confirmacao) return;
-    
-    try {
-        // Excluir do servidor
-        const res = await fetch(`/api/vagas/delete/${uuid}`, {
-            method: 'POST'
-        });
-        
-        if (!res.ok) throw new Error('Erro ao excluir vaga');
-        
-        // Remover currículo do localStorage
-        localStorage.removeItem(`curriculo_${uuid}`);
-        
-        // Recarregar lista
-        await carregarVagas();
-        
-        alert('✅ Vaga excluída com sucesso!');
-        
-    } catch (err) {
-        console.error('Erro ao excluir vaga:', err);
-        alert('❌ Erro ao excluir vaga');
-    }
 }
+
+async function excluirCurriculo(uuid) {
+    const vaga = todasVagas.find(v => v.uuid === uuid);
+    abrirConfirmacao(
+        'Excluir currículo gerado',
+        `O currículo de "${vaga?.cargo || 'esta vaga'}" será removido. Você poderá gerar um novo currículo normalmente.`,
+        async () => {
+            try {
+                await fetch(`/api/curriculo/delete/${uuid}`, { method: 'POST' });
+            } catch (_) {}
+            localStorage.removeItem(`curriculo_${uuid}`);
+            await carregarVagas();
+        }
+    );
+}
+
+// =============== MODAL DE CONFIRMAÇÃO ===============
+
+function abrirConfirmacao(titulo, mensagem, callbackConfirmar) {
+    document.getElementById('confirmTitulo').textContent = titulo;
+    document.getElementById('confirmMensagem').textContent = mensagem;
+    document.getElementById('confirmModal').style.display = 'flex';
+    document.getElementById('confirmBtn').onclick = async () => {
+        closeConfirmModal();
+        await callbackConfirmar();
+    };
+}
+
+function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; }
 
 // =============== GERAÇÃO DE PROMPT ===============
 
@@ -294,24 +256,13 @@ async function gerarPromptVaga(uuid) {
     vagaAtualUUID = uuid;
     const vaga = todasVagas.find(v => v.uuid === uuid);
     if (!vaga) return;
-    
+
     try {
-        // Adicionar timestamp para evitar cache
         const timestamp = new Date().getTime();
-        
-        // Carregar todos os arquivos necessários com cache-busting
         const [
-            historyRes,
-            masterPromptRes,
-            fase1Res,
-            fase2Res,
-            fase3Res,
-            fase4Res,
-            fase5Res,
-            eligibilitySchemaRes,
-            finalOutputSchemaRes,
-            personalHistorySchemaRes,
-            personalInfoSchemaRes
+            historyRes, masterPromptRes,
+            fase1Res, fase2Res, fase3Res, fase4Res, fase5Res,
+            eligibilitySchemaRes, finalOutputSchemaRes
         ] = await Promise.all([
             fetch(`/data/personal-history.md?t=${timestamp}`),
             fetch(`/core/prompts/master-prompt.md?t=${timestamp}`),
@@ -321,12 +272,9 @@ async function gerarPromptVaga(uuid) {
             fetch(`/core/prompts/fase4.md?t=${timestamp}`),
             fetch(`/core/prompts/fase5.md?t=${timestamp}`),
             fetch(`/core/contracts/elegibility.schema.json?t=${timestamp}`),
-            fetch(`/core/contracts/final-output.schema.json?t=${timestamp}`),
-            fetch(`/core/contracts/personal-history.schema.json?t=${timestamp}`),
-            fetch(`/core/contracts/personal-info.schema.json?t=${timestamp}`)
+            fetch(`/core/contracts/final-output.schema.json?t=${timestamp}`)
         ]);
-        
-        // Ler conteúdos
+
         const history = await historyRes.text();
         let masterPrompt = await masterPromptRes.text();
         const fase1 = await fase1Res.text();
@@ -336,37 +284,22 @@ async function gerarPromptVaga(uuid) {
         const fase5 = await fase5Res.text();
         const eligibilitySchema = await eligibilitySchemaRes.text();
         const finalOutputSchema = await finalOutputSchemaRes.text();
-        const personalHistorySchema = await personalHistorySchemaRes.text();
-        const personalInfoSchema = await personalInfoSchemaRes.text();
-        
-        // Substituir placeholders principais no master-prompt
+
         masterPrompt = masterPrompt.replace('{{PROFESSIONAL_HISTORY}}', history);
         masterPrompt = masterPrompt.replace('{{JOB_DESCRIPTION}}', vaga.descricao);
-        
-        // Substituir fases
         masterPrompt = masterPrompt.replace('{{FASE_1}}', fase1);
         masterPrompt = masterPrompt.replace('{{FASE_2}}', fase2);
         masterPrompt = masterPrompt.replace('{{FASE_3}}', fase3);
         masterPrompt = masterPrompt.replace('{{FASE_4}}', fase4);
         masterPrompt = masterPrompt.replace('{{FASE_5}}', fase5);
-        
-        // Substituir schemas nas fases (caso existam referências)
-        masterPrompt = masterPrompt.replace(/\/\/core\/contracts\/elegibility\.schema\.json/g, '');
         masterPrompt = masterPrompt.replace(/{{ELEGIBILITY_SCHEMA}}/g, eligibilitySchema);
-        masterPrompt = masterPrompt.replace(/\/\/core\/contracts\/final-output\.schema\.json/g, '');
         masterPrompt = masterPrompt.replace(/{{FINAL_OUTPUT_SCHEMA}}/g, finalOutputSchema);
-        
-        // Adicionar schemas inline após menções
-        masterPrompt = masterPrompt.replace(/seguindo o schema `elegibility\.schema\.json`/g, 
+        masterPrompt = masterPrompt.replace(/seguindo o schema `elegibility\.schema\.json`/g,
             `seguindo este schema:\n\`\`\`json\n${eligibilitySchema}\n\`\`\``);
-        
-        masterPrompt = masterPrompt.replace(/seguindo o schema `final-output\.schema\.json`/g, 
+        masterPrompt = masterPrompt.replace(/seguindo o schema `final-output\.schema\.json`/g,
             `seguindo este schema:\n\`\`\`json\n${finalOutputSchema}\n\`\`\``);
-        
-        // Remover linhas que referenciam PERSONAL_DATA (não enviamos dados pessoais)
         masterPrompt = masterPrompt.replace(/### INFORMAÇÕES PESSOAIS DO CANDIDATO:[\s\S]*?```json[\s\S]*?{{PERSONAL_DATA}}[\s\S]*?```/g, '');
-        
-        // Adicionar cabeçalho informativo
+
         const promptFinal = `# GERAÇÃO DE CURRÍCULO ESTRATÉGICO
 # Data: ${new Date().toLocaleDateString('pt-BR')}
 # Vaga: ${vaga.cargo} - ${vaga.empresa}
@@ -375,23 +308,23 @@ IMPORTANTE: Este prompt contém todos os arquivos necessários já renderizados.
 Não há necessidade de buscar arquivos externos.
 
 ${masterPrompt}`;
-        
+
         document.getElementById('generatedPrompt').textContent = promptFinal;
         document.getElementById('promptModal').style.display = 'flex';
     } catch (err) {
         console.error('Erro ao gerar prompt:', err);
-        alert('Erro ao gerar prompt. Verifique se todos os arquivos necessários existem:\n' + err.message);
+        alert('Erro ao gerar prompt: ' + err.message);
     }
 }
 
-function closePromptModal() {
-    document.getElementById('promptModal').style.display = 'none';
-}
+function closePromptModal() { document.getElementById('promptModal').style.display = 'none'; }
 
 function copyPrompt() {
     const prompt = document.getElementById('generatedPrompt').textContent;
     navigator.clipboard.writeText(prompt).then(() => {
-        alert('✅ Prompt copiado para a área de transferência!');
+        const btn = document.querySelector('[onclick="copyPrompt()"]');
+        btn.textContent = '✅ Copiado!';
+        setTimeout(() => btn.textContent = '📋 Copiar', 2000);
     });
 }
 
@@ -402,189 +335,262 @@ function avancarParaColarResposta() {
     document.getElementById('respostaModal').style.display = 'flex';
 }
 
-function closeRespostaModal() {
-    document.getElementById('respostaModal').style.display = 'none';
-}
+function closeRespostaModal() { document.getElementById('respostaModal').style.display = 'none'; }
 
 function voltarParaPrompt() {
     closeRespostaModal();
     document.getElementById('promptModal').style.display = 'flex';
 }
 
-// =============== GERAÇÃO DE CURRÍCULO ===============
+// =============== EDITAR JSON DO CURRÍCULO ===============
+
+async function editarJsonCurriculo(uuid) {
+    vagaAtualUUID = uuid;
+    let jsonData = null;
+
+    try {
+        const res = await fetch(`/api/curriculo/${uuid}`);
+        if (res.ok) {
+            jsonData = await res.json();
+        } else {
+            const stored = localStorage.getItem(`curriculo_${uuid}`);
+            if (stored) jsonData = JSON.parse(stored);
+        }
+    } catch (_) {
+        const stored = localStorage.getItem(`curriculo_${uuid}`);
+        if (stored) jsonData = JSON.parse(stored);
+    }
+
+    if (!jsonData) {
+        alert('Não foi possível carregar o JSON do currículo.');
+        return;
+    }
+
+    document.getElementById('resposta_vaga_uuid').value = uuid;
+    document.getElementById('jsonResposta').value = JSON.stringify(jsonData, null, 2);
+    document.getElementById('respostaModalTitulo').textContent = '✏️ Editar JSON do Currículo';
+    document.getElementById('respostaModalDescricao').textContent = 'Edite o JSON abaixo e clique em "Salvar Currículo" para aplicar as alterações:';
+    document.getElementById('btnGerarCurriculo').textContent = '💾 Salvar Currículo';
+    document.getElementById('btnVoltarPrompt').style.display = 'none';
+    document.getElementById('respostaModal').style.display = 'flex';
+}
+
+// =============== GERAÇÃO / SALVAMENTO DE CURRÍCULO ===============
 
 async function gerarCurriculo() {
     const vagaUUID = document.getElementById('resposta_vaga_uuid').value;
     const jsonText = document.getElementById('jsonResposta').value.trim();
-    
+
     if (!jsonText) {
         showModalStatus('respostaStatus', 'error', 'Cole o JSON retornado pelo ChatGPT!');
         return;
     }
-    
+
     try {
         const jsonData = JSON.parse(jsonText);
-        
-        // Validar estrutura básica
-        if (!jsonData.elegibilidade || !jsonData.curriculo) {
-            throw new Error('JSON inválido: faltam campos obrigatórios');
-        }
-        
-        // Salvar no servidor
+        if (!jsonData.elegibilidade || !jsonData.curriculo) throw new Error('JSON inválido: faltam campos obrigatórios');
+
         const res = await fetch(`/api/curriculo/${vagaUUID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(jsonData)
         });
-        
         if (!res.ok) throw new Error('Erro ao salvar currículo');
-        
-        // Salvar também no localStorage para acesso rápido
+
         localStorage.setItem(`curriculo_${vagaUUID}`, JSON.stringify(jsonData));
-        
         curriculoAtual = jsonData;
         vagaAtualUUID = vagaUUID;
-        
+
+        // Resetar modal de resposta para estado padrão
+        resetarModalResposta();
+
         closeRespostaModal();
         mostrarCurriculoGerado();
-        carregarVagas(); // Atualizar lista para mostrar botão "Ver Currículo"
-        
+        carregarVagas();
+
     } catch (err) {
-        console.error('Erro ao processar JSON:', err);
         showModalStatus('respostaStatus', 'error', `❌ ${err.message}`);
     }
 }
 
+function resetarModalResposta() {
+    document.getElementById('respostaModalTitulo').textContent = 'Colar Resposta do ChatGPT';
+    document.getElementById('respostaModalDescricao').textContent = 'Cole aqui o JSON completo retornado pelo ChatGPT:';
+    document.getElementById('btnGerarCurriculo').textContent = '✨ Gerar Currículo';
+    document.getElementById('btnVoltarPrompt').style.display = 'inline-flex';
+}
+
+// =============== EXIBIÇÃO DO CURRÍCULO ===============
+
 function mostrarCurriculoGerado() {
     if (!curriculoAtual) return;
-    
     const eligibility = curriculoAtual.elegibilidade;
-    
+    const vaga = todasVagas.find(v => v.uuid === vagaAtualUUID);
+
     let html = `
         <div class="eligibility-card">
             <div class="eligibility-score">
                 <div class="stars">${'⭐'.repeat(eligibility.pontuacao_estrelas)}</div>
-                <div class="score-status ${getEligibilityClass(eligibility.status)}">
-                    ${eligibility.status}
-                </div>
-                ${eligibility.pontuacao_percentual ? `<div>${eligibility.pontuacao_percentual}% de compatibilidade</div>` : ''}
+                <div class="score-status ${getEligibilityClass(eligibility.status)}">${eligibility.status}</div>
+                ${eligibility.pontuacao_percentual ? `<div style="margin-top:6px;color:#6b7280;">${eligibility.pontuacao_percentual}% de compatibilidade</div>` : ''}
             </div>
-            
             <div style="margin-bottom: 20px;">
                 <h4 style="margin-bottom: 12px;">✅ Pontos Fortes:</h4>
                 <ul class="points-list strengths">
                     ${eligibility.pontos_fortes.map(p => `<li>${p}</li>`).join('')}
                 </ul>
             </div>
-            
-            ${eligibility.pontos_fracos && eligibility.pontos_fracos.length > 0 ? `
+            ${eligibility.pontos_fracos?.length ? `
                 <div style="margin-bottom: 20px;">
                     <h4 style="margin-bottom: 12px;">⚠️ Pontos Fracos:</h4>
                     <ul class="points-list weaknesses">
                         ${eligibility.pontos_fracos.map(p => `<li>${p}</li>`).join('')}
                     </ul>
-                </div>
-            ` : ''}
-            
-            ${eligibility.sugestoes && eligibility.sugestoes.length > 0 ? `
+                </div>` : ''}
+            ${eligibility.sugestoes?.length ? `
                 <div>
                     <h4 style="margin-bottom: 12px;">💡 Sugestões:</h4>
                     <ul class="points-list suggestions">
                         ${eligibility.sugestoes.map(p => `<li>${p}</li>`).join('')}
                     </ul>
-                </div>
-            ` : ''}
-            
+                </div>` : ''}
             <div style="margin-top: 20px; padding: 16px; background: white; border-radius: 8px;">
                 <strong>Recomendação:</strong> ${eligibility.recomendacao}
             </div>
-        </div>
-    `;
-    
+        </div>`;
+
     document.getElementById('eligibilityContent').innerHTML = html;
     document.getElementById('curriculoModal').style.display = 'flex';
 }
 
 function getEligibilityClass(status) {
-    if (status.includes('ELEGÍVEL') && !status.includes('NÃO')) return 'eligible';
-    if (status.includes('PARCIAL')) return 'partial';
+    if (status.includes('ELEGÍVEL') && !status.includes('NÃO') && !status.includes('BAIXA')) return 'eligible';
+    if (status.includes('PARCIAL') || status.includes('BAIXA')) return 'partial';
     return 'not-eligible';
 }
 
 async function visualizarCurriculo(uuid) {
     try {
-        // Tentar carregar do servidor
+        let jsonData = null;
         const res = await fetch(`/api/curriculo/${uuid}`);
-        
         if (res.ok) {
-            curriculoAtual = await res.json();
+            jsonData = await res.json();
         } else {
-            // Fallback para localStorage
             const stored = localStorage.getItem(`curriculo_${uuid}`);
-            if (stored) {
-                curriculoAtual = JSON.parse(stored);
-            } else {
-                throw new Error('Currículo não encontrado');
-            }
+            if (stored) jsonData = JSON.parse(stored);
         }
-        
+        if (!jsonData) throw new Error('Currículo não encontrado');
+
+        curriculoAtual = jsonData;
         vagaAtualUUID = uuid;
         mostrarCurriculoGerado();
-        
     } catch (err) {
         console.error('Erro ao carregar currículo:', err);
         alert('Erro ao carregar currículo');
     }
 }
 
-function closeCurriculoModal() {
-    document.getElementById('curriculoModal').style.display = 'none';
+function closeCurriculoModal() { document.getElementById('curriculoModal').style.display = 'none'; }
+
+// =============== VISUALIZAÇÃO DO CURRÍCULO (MODAL INTERNO) ===============
+
+async function abrirVisualizacaoCurriculo() {
+    if (!curriculoAtual) return;
+
+    const timestamp = new Date().getTime();
+    let personalData = {};
+    try {
+        const res = await fetch(`/data/personal-data.json?t=${timestamp}`);
+        if (res.ok) personalData = await res.json();
+    } catch (err) {
+        console.error('Erro ao carregar dados pessoais:', err);
+    }
+
+    // Montar dados completos para o visualizador
+    const resumeData = {
+        ...curriculoAtual.curriculo,
+        vaga_alvo: curriculoAtual.vaga_alvo,
+        personalData
+    };
+
+    // Gerar título formatado
+    const titulo = gerarTituloCurriculo(curriculoAtual, personalData);
+    resumeData._titulo = titulo;
+
+    // Abrir modal de visualização com iframe
+    const modal = document.getElementById('visualizadorModal');
+    const iframe = document.getElementById('resumeIframe');
+
+    // Salvar dados no sessionStorage para o iframe ler
+    sessionStorage.setItem('current_resume', JSON.stringify(resumeData));
+    sessionStorage.setItem('resume_titulo', titulo);
+
+    // Resetar e carregar iframe
+    iframe.src = '';
+    setTimeout(() => {
+        iframe.src = 'resume.html';
+    }, 50);
+
+    document.getElementById('visualizadorTitulo').textContent = titulo.replace(/_/g, ' ');
+    modal.style.display = 'flex';
 }
 
-function abrirVisualizacaoCurriculo() {
-    if (!curriculoAtual) return;
-    
-    // Carregar dados pessoais com cache-busting
-    const timestamp = new Date().getTime();
-    fetch(`/data/personal-data.json?t=${timestamp}`)
-        .then(res => res.json())
-        .then(personalData => {
-            console.log('Personal data carregado:', personalData);
-            console.log('Curriculo atual:', curriculoAtual.curriculo);
-            
-            // Mesclar dados pessoais com currículo
-            const resumeData = {
-                ...curriculoAtual.curriculo,
-                personalData: personalData  // Adicionar como propriedade separada
-            };
-            
-            console.log('Resume data final:', resumeData);
-            
-            // Salvar no sessionStorage
-            sessionStorage.setItem('current_resume', JSON.stringify(resumeData));
-            
-            // Abrir em nova janela
-            window.open('resume.html', '_blank');
-        })
-        .catch(err => {
-            console.error('Erro ao carregar dados pessoais:', err);
-            alert('Erro ao carregar dados pessoais: ' + err.message);
-        });
+function gerarTituloCurriculo(curriculo, personalData) {
+    // Nome: primeiro e último nome
+    const nomeCompleto = personalData?.name || '';
+    const partes = nomeCompleto.trim().split(/\s+/);
+    const nomeFormatado = partes.length >= 2
+        ? `${partes[0]} ${partes[partes.length - 1]}`
+        : partes[0] || 'candidato';
+
+    // Empresa
+    const empresa = curriculo?.vaga_alvo?.empresa
+        || curriculo?.curriculo?.vaga_alvo?.empresa
+        || '';
+
+    // Cargo/título: usar campo titulo do curriculo ou headline
+    const tituloCustom = curriculo?.curriculo?.titulo_curriculo || '';
+    const headline = curriculo?.curriculo?.header?.headline || '';
+    // Preferir titulo_curriculo (minimalista), fallback para headline
+    const cargo = tituloCustom || headline;
+
+    const limpar = (str) => str
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')  // remover acentos
+        .replace(/[^a-z0-9\s]/g, '')                        // remover especiais
+        .trim()
+        .replace(/\s+/g, '_');
+
+    const partesTitulo = ['cv'];
+    if (nomeFormatado) partesTitulo.push(limpar(nomeFormatado));
+    if (empresa) partesTitulo.push(limpar(empresa));
+    if (cargo) partesTitulo.push(limpar(cargo));
+
+    return partesTitulo.join('_');
+}
+
+function closeVisualizadorModal() {
+    document.getElementById('visualizadorModal').style.display = 'none';
+    document.getElementById('resumeIframe').src = '';
+}
+
+function imprimirDoVisualizador() {
+    const iframe = document.getElementById('resumeIframe');
+    if (iframe.contentWindow) {
+        iframe.contentWindow.print();
+    }
 }
 
 function downloadJsonCurriculo() {
     if (!curriculoAtual) return;
-    
     const dataStr = JSON.stringify(curriculoAtual, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     const vaga = todasVagas.find(v => v.uuid === vagaAtualUUID);
     const filename = `curriculo_${vaga ? vaga.empresa.replace(/\s+/g, '_') : 'vaga'}_${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', filename);
-    linkElement.click();
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', filename);
+    link.click();
 }
 
 function showModalStatus(elementId, type, msg) {

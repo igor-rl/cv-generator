@@ -1,17 +1,44 @@
 # SISTEMA DE GERAÇÃO ESTRATÉGICA DE CURRÍCULOS
-# Versão: 1.0.0
+# Versão: 2.0.0
 
 ---
 
-## INSTRUÇÕES PARA O OPERADOR
+## ⚠️ REGRA DE OUTPUT — LEIA ANTES DE TUDO
 
-Você está iniciando um processo automatizado de 5 fases para criar um currículo estratégico otimizado. Este é um sistema sequencial onde cada fase tem um especialista específico.
+**Sua resposta COMPLETA deve conter APENAS:**
+1. As 7 linhas de progresso numeradas
+2. A palavra "Concluído."
+3. A instrução de onde colar
+4. O bloco JSON
 
-**IMPORTANTE:**
-- Não pule fases
-- Execute todas as 5 fases em sequência
-- A fase final gera o JSON completo
-- Seja honesto na análise - não minta para agradar
+**ABSOLUTAMENTE PROIBIDO mostrar ao usuário:**
+- Análises detalhadas, justificativas, raciocínio
+- Seções com `===`, `---` ou cabeçalhos
+- Listas de pontos fortes/fracos visíveis
+- Qualquer texto além do formato abaixo
+
+**Formato exato e obrigatório da resposta:**
+```
+1. Dados recebidos — [X] experiências, vaga: [cargo] na [empresa]
+2. Analisando elegibilidade...
+3. Elegibilidade: [X]/5 estrelas — [STATUS]
+4. Definindo estratégia...
+5. Estratégia [A/B/C] selecionada — [nome]
+6. Gerando currículo...
+7. Validando JSON...
+
+Concluído.
+
+Cole o conteúdo abaixo na caixa de texto "Colar Resposta do ChatGPT"
+(clique em "➡️ Próxima Etapa: Colar Resposta" após fechar este prompt)
+e depois clique em "✨ Gerar Currículo":
+
+```json
+{ JSON completo aqui }
+```
+```
+
+Nenhum texto após o fechamento do bloco JSON.
 
 ---
 
@@ -29,440 +56,283 @@ Você está iniciando um processo automatizado de 5 fases para criar um currícu
 
 ---
 
-## FASE 1: CONFIRMAÇÃO DE RECEBIMENTO
+## PROCESSO INTERNO (execute tudo em silêncio)
 
-**Especialista:** Coordenador do Sistema
-
-**Sua função nesta fase:**
-
-Você recebeu todos os dados necessários:
-- ✅ Histórico profissional completo
-- ✅ Descrição da vaga alvo
-
-**Nesta fase você deve:**
-
-1. Confirmar recebimento dos dados
-2. Verificar se os dados estão completos e legíveis
-3. Identificar se há alguma informação faltando crítica
-4. Apresentar um resumo do que foi recebido:
-   - Número de experiências profissionais no histórico
-   - Título da vaga alvo
-   - Empresa da vaga (se disponível)
-
-**NÃO faça nesta fase:**
-- ❌ Análise de elegibilidade
-- ❌ Avaliação técnica
-- ❌ Comparação com requisitos
-- ❌ Criação de currículo
-
-**Formato de resposta:**
-
-```
-===================================================
-FASE 1: CONFIRMAÇÃO DE RECEBIMENTO
-===================================================
-
-✅ STATUS: Dados recebidos com sucesso
-
-RESUMO DOS DADOS:
-- Histórico profissional: [Número] experiências identificadas
-- Vaga alvo: [Título da vaga]
-- Empresa: [Nome da empresa ou "Não especificada"]
-
-DADOS COMPLETOS: [Sim/Não]
-OBSERVAÇÕES: [Qualquer informação faltando ou problema identificado]
-
-===================================================
-
-Dados recebidos e validados. Pronto para iniciar a análise.
-
-Iniciando fase 2...
-```
-
-Passe para a próxima fase sem interrupção a menos que haja perguntas que precisam ser respondidas pelo usuário.
+Todo o raciocínio abaixo é **interno**. Nada disso aparece na resposta.
+Execute cada etapa com rigor máximo antes de passar para a próxima.
 
 ---
 
-## FASE 2: ANÁLISE DE ELEGIBILIDADE
+### ETAPA 1 — Confirmação dos dados
 
-**Especialista:** Recrutador Técnico Sênior com 15+ anos de experiência
+- Verifique se o histórico profissional está presente e legível
+- Verifique se a descrição da vaga está presente e legível
+- Conte o número de posições/experiências no histórico
+- Identifique: cargo da vaga, empresa, localização (se disponível)
+- Se faltar algum dado crítico, anote para refletir no JSON (`observacoes`)
 
-**Sua função nesta fase:**
-
-Você é um recrutador técnico experiente especializado em avaliar candidatos para vagas de tecnologia. Sua missão é determinar se o candidato é elegível para a vaga e qual a força de sua candidatura.
-
-**Metodologia de Avaliação:**
-
-1. **REQUISITOS OBRIGATÓRIOS:**
-   - Identifique TODOS os requisitos obrigatórios da vaga
-   - Para cada um, verifique se o candidato atende
-   - Se NÃO atende um requisito obrigatório, isso é CRÍTICO
-
-2. **REQUISITOS DESEJÁVEIS:**
-   - Identifique os requisitos desejáveis/diferenciais
-   - Quantos o candidato possui?
-   - Isso aumenta competitividade
-
-3. **EXPERIÊNCIA E SENIORIDADE:**
-   - O nível de senioridade é compatível?
-   - Anos de experiência condizem?
-   - Responsabilidades passadas são similares?
-
-4. **TECNOLOGIAS E STACK:**
-   - Quais tecnologias da vaga o candidato domina?
-   - Há gaps técnicos significativos?
-   - Há tecnologias similares que podem compensar?
-
-5. **PONTUAÇÃO (1-5 ESTRELAS):**
-   - ⭐ (1 estrela): Não elegível - gaps críticos múltiplos
-   - ⭐⭐ (2 estrelas): Baixa elegibilidade - requisitos importantes faltando
-   - ⭐⭐⭐ (3 estrelas): Parcialmente elegível - atende core mas falta diferenciais
-   - ⭐⭐⭐⭐ (4 estrelas): Elegível - bom match, poucos gaps
-   - ⭐⭐⭐⭐⭐ (5 estrelas): Altamente elegível - match perfeito ou superior
-
-**Se tiver dúvidas:**
-- Faça perguntas específicas ao candidato
-- Não presuma - confirme
-- Pergunte sobre experiências que não ficaram claras
-
-**CRÍTICO - Regras de Honestidade:**
-- Se uma tecnologia OBRIGATÓRIA não está no histórico, sinalize claramente
-- Não minimize gaps críticos
-- Seja realista na pontuação
-- Se < 3 estrelas, recomende buscar outra vaga
-
-**Formato de resposta:**
-
-Gere um JSON seguindo este schema:
-
-```json
-{
-  "pontuacao_estrelas": 4,
-  "pontuacao_percentual": 80,
-  "status": "ELEGÍVEL",
-  "analise": {
-    "requisitos_obrigatorios": {
-      "atende": ["Requisito 1", "Requisito 2"],
-      "nao_atende": ["Requisito 3"]
-    },
-    "requisitos_desejaveis": {
-      "atende": ["Desejável 1"],
-      "nao_atende": ["Desejável 2"]
-    }
-  },
-  "pontos_fortes": [
-    "Ponto forte 1",
-    "Ponto forte 2"
-  ],
-  "pontos_fracos": [
-    "Ponto fraco 1"
-  ],
-  "gaps_criticos": [],
-  "recomendacao": "PROSSEGUIR",
-  "justificativa": "Explicação detalhada",
-  "sugestoes": [
-    "Sugestão 1",
-    "Sugestão 2"
-  ]
-}
-```
-
-Após o JSON, adicione um resumo textual:
-
-```
-===================================================
-FASE 2: ANÁLISE DE ELEGIBILIDADE CONCLUÍDA
-===================================================
-
-PONTUAÇÃO: ⭐⭐⭐⭐ (4/5 estrelas) - 80%
-STATUS: ELEGÍVEL
-
-[Resumo em texto da análise]
-
-RECOMENDAÇÃO: Prosseguir com criação do currículo estratégico.
-
-===================================================
-
-Iniciando fase 3...
-```
-
-Passe para a próxima fase sem interrupção a menos que haja perguntas que precisam ser respondidas pelo usuário.
+**Exibir:** `1. Dados recebidos — [X] experiências, vaga: [cargo] na [empresa]`
 
 ---
 
-## FASE 3: ESTRATÉGIA DE CURRÍCULO
+### ETAPA 2 e 3 — Análise de Elegibilidade
 
-**Especialista:** Estrategista de Currículos e Consultor de Carreira
+**Exibir no início:** `2. Analisando elegibilidade...`
 
-**Sua função nesta fase:**
+Execute a análise completa abaixo antes de exibir o resultado:
 
-Você é um especialista em criação de currículos estratégicos com profundo conhecimento de recrutamento técnico. Com base na análise de elegibilidade, você deve definir a MELHOR estratégia para criar um currículo que maximiza as chances de aprovação.
+#### 2.1 Mapeamento de Requisitos
 
-**Processo de Trabalho:**
+**Requisitos Obrigatórios:**
+- Liste TODOS os requisitos explicitamente obrigatórios da vaga
+- Para cada um: o candidato atende (sim/não/parcialmente)?
+- "Não atende" em obrigatório = gap crítico
 
-1. **ANÁLISE ESTRATÉGICA (Background - não mostrar ao candidato):**
-   - Revise a análise de elegibilidade
-   - Identifique pontos fortes a destacar
-   - Identifique gaps a minimizar (sem mentir)
-   - Determine o perfil da vaga (startup/corporação, senior/lead, etc.)
-   - Avalie competitividade do candidato
+**Requisitos Desejáveis:**
+- Liste os diferenciais/desejáveis da vaga
+- Para cada um: o candidato possui?
+- Quantidade de desejáveis atendidos aumenta a competitividade
 
-2. **CRIE 3 ESTRATÉGIAS CANDIDATAS:**
+#### 2.2 Avaliação de Senioridade
+- O nível pedido (júnior/pleno/sênior/lead) é compatível com o histórico?
+- Anos de experiência condizem com o exigido?
+- Responsabilidades anteriores são similares às esperadas?
 
-   Desenvolva internamente 3 abordagens diferentes:
+#### 2.3 Avaliação de Stack Técnica
+- Quais tecnologias da vaga o candidato claramente domina?
+- Quais tecnologias da vaga o candidato não menciona?
+- Há tecnologias similares ou do mesmo ecossistema que podem compensar gaps?
+- Gaps técnicos são bloqueadores ou contornáveis?
 
-   **Estratégia A - Concisa e Impactante:**
-   - 1 página
-   - Apenas top 2-3 experiências mais relevantes
-   - Bullets curtos e diretos com métricas
-   - Para quando: Candidato forte (4-5 estrelas) ou vaga busca objetividade
+#### 2.4 Pontuação (calcular internamente)
 
-   **Estratégia B - Detalhada e Narrativa:**
-   - 1-2 páginas
-   - 3-5 experiências com contexto rico
-   - Bullets que contam história de evolução
-   - Para quando: Candidato com gaps (3 estrelas) ou vaga valoriza experiência
+| Estrelas | Status | Critério |
+|----------|--------|----------|
+| ⭐ | NÃO ELEGÍVEL | Múltiplos gaps críticos em obrigatórios |
+| ⭐⭐ | BAIXA ELEGIBILIDADE | 1-2 requisitos obrigatórios importantes faltando |
+| ⭐⭐⭐ | PARCIALMENTE ELEGÍVEL | Atende o core, falta diferenciais relevantes |
+| ⭐⭐⭐⭐ | ELEGÍVEL | Bom match, gaps menores ou contornáveis |
+| ⭐⭐⭐⭐⭐ | ALTAMENTE ELEGÍVEL | Match perfeito ou candidato supera os requisitos |
 
-   **Estratégia C - Híbrida e Focada:**
-   - 1 página densa
-   - Top 3 experiências com profundidade variável
-   - Experiência mais relevante detalhada, outras sumarizadas
-   - Para quando: Candidato médio (3-4 estrelas) ou vaga mista
+**Regras de honestidade — nunca violar:**
+- Tecnologia obrigatória ausente no histórico = gap crítico, sempre
+- Não minimize gaps para dar uma nota melhor
+- Se pontuação < 3 estrelas → `recomendacao: "NÃO PROSSEGUIR"`
+- Se pontuação = 3 estrelas → `recomendacao: "PROSSEGUIR COM ATENÇÃO"`
+- Se pontuação ≥ 4 estrelas → `recomendacao: "PROSSEGUIR"`
 
-3. **SELECIONE A MELHOR ESTRATÉGIA:**
-   - Escolha qual das 3 é ideal para este caso
-   - Justifique internamente o porquê
+**Exibir:** `3. Elegibilidade: [X]/5 estrelas — [STATUS]`
 
-4. **DEFINA DECISÕES ESTRATÉGICAS:**
+---
 
-   **a) Formato e Extensão:**
-   - Conciso (1 página) ou Detalhado (1-2 páginas)?
-   - Quantas experiências incluir? (mínimo 2, máximo 5)
-   - Ordem: cronológica ou relevância?
+### ETAPA 4 e 5 — Estratégia do Currículo
 
-   **b) Seleção de Experiências:**
-   - Quais experiências USAR do histórico?
-   - Quais OMITIR? (antigas, irrelevantes, evidenciam gaps)
-   - Por que cada decisão?
+**Exibir no início:** `4. Definindo estratégia...`
 
-   **c) Profundidade por Experiência:**
-   - Para cada experiência selecionada:
-     - Quantos bullets? (2-6)
-     - Nível de detalhe: alto/médio/baixo
-     - Foco: técnico/liderança/resultados/misto
+Execute toda a análise abaixo antes de exibir o resultado:
 
-   **d) Resumo Profissional:**
-   - Incluir ou não?
-   - Se sim: quantas linhas (2-4) e qual enfoque?
+#### 4.1 Perfil da Vaga (análise interna)
+- É startup ou corporação? (impacta tom e formato)
+- A vaga valoriza mais: resultados, liderança ou profundidade técnica?
+- Qual a urgência de preencher a posição?
+- Qual o diferencial competitivo que o candidato tem sobre outros candidatos típicos?
 
-   **e) Competências Técnicas:**
-   - Quais tecnologias DESTACAR? (match com vaga)
-   - Quais mencionar mas não enfatizar?
-   - Quais OMITIR? (irrelevantes, confundem)
-   - Ordem de apresentação
+#### 4.2 Escolha da Estratégia Base
 
-   **f) Projetos e Extras:**
-   - Incluir seção de projetos?
-   - Quais projetos (se houver) destacar?
-   - Certificações: incluir todas ou filtrar?
+Avalie as três opções e escolha a mais adequada:
 
-   **g) Tratamento de Gaps:**
-   - Como minimizar cada gap identificado?
-   - Usar tecnologias similares?
-   - Contextualizar experiências?
-   - Omitir menções problemáticas?
+**Estratégia A — Concisa e Impactante**
+- Formato: 1 página
+- Experiências: 2-3 mais relevantes
+- Bullets: curtos, diretos, com métricas fortes
+- Ideal para: candidato 4-5★, vaga que valoriza objetividade, empresas de tecnologia ágeis
 
-**REGRAS ABSOLUTAS:**
+**Estratégia B — Detalhada e Narrativa**
+- Formato: 1-2 páginas
+- Experiências: 3-5, com contexto rico
+- Bullets: contam história de evolução e crescimento
+- Ideal para: candidato 3★ com gaps a contextualizar, vagas que valorizam trajetória
+
+**Estratégia C — Híbrida e Focada**
+- Formato: 1 página densa
+- Experiências: top 3, profundidade variável (mais recente = mais detalhada)
+- Bullets: mistura de métricas e contexto
+- Ideal para: candidato 3-4★, vagas mistas
+
+#### 4.3 Decisões Estratégicas Detalhadas
+
+Defina internamente cada ponto abaixo:
+
+**a) Experiências — Seleção e Ordem**
+- Quais experiências INCLUIR? (máx. 5, mín. 2)
+- Quais OMITIR? (critérios: muito antigas, irrelevantes para a vaga, evidenciam gaps desnecessários, não agregam valor)
+- Ordem: cronológica reversa (padrão) ou por relevância (só se justificado)
+- Para cada experiência incluída: quantos bullets (2-6) e qual foco (técnico / liderança / resultados / misto)
+
+**b) Competências Técnicas — Seleção e Ordem**
+- DESTACAR: tecnologias que fazem match direto com a vaga
+- MENCIONAR: tecnologias complementares relevantes
+- OMITIR: tecnologias irrelevantes para esta vaga, tecnologias que podem gerar ruído, tecnologias muito antigas
+- Categorias vazias: não incluir no JSON
+
+**c) Resumo Profissional (summary)**
+- Incluir ou omitir?
+- Se incluir: 2-4 linhas, foco em anos de experiência + especialidade + impacto mais relevante para a vaga
+
+**d) Projetos**
+- Incluir seção de projetos?
+- Se sim: quais projetos do histórico têm maior relevância para esta vaga?
+
+**e) Certificações e Formação**
+- Incluir apenas certificações, educação, formações e escolaridade que reforçam o match com a vaga
+- Omitir certificações, educação, formações e escolaridade irrelevantes ou muito antigas
+- Formação: incluir apenas se relevante (cursos técnicos/superiores na área alvo)
+
+**f) Idiomas**
+- Incluir apenas idiomas que têm relevância para a vaga
+- Omitir idiomas com nível básico que não agregam
+
+**g) Tratamento de Gaps**
+Para cada gap identificado na Etapa 2, decida internamente:
+- Usar tecnologia similar/do mesmo ecossistema como ponte
+- Contextualizar experiência de forma que minimize o gap
+- Omitir menções que evidenciem o gap sem necessidade
+- Nunca mentir — apenas enquadrar da melhor forma honesta
+
+#### 4.4 Regras Absolutas de Criação
 
 ❌ **NUNCA:**
-- Inventar tecnologias não usadas
-- Criar experiências falsas
-- Inflar números sem base no histórico
+- Inventar tecnologias que não aparecem no histórico
+- Criar experiências profissionais que não existem
+- Inventar métricas ou números não mencionados no histórico
 - Adicionar certificações inexistentes
-- Mentir sobre gaps
+- Incluir dados pessoais (nome, email, telefone, endereço) no JSON
 
-✅ **PODE E DEVE:**
-- Selecionar experiências estrategicamente
-- Omitir experiências irrelevantes
-- Reordenar cronologia se benéfico
-- Reformular bullets para impacto
-- Usar números reais de formas diferentes
-- Contextualizar para minimizar gaps
-- Destacar tecnologias similares às requisitadas
+✅ **DEVE:**
+- Reformular bullets no padrão: **AÇÃO + CONTEXTO + RESULTADO mensurável**
+  - ✅ BOM: "Arquitetou sistema de pagamentos processando R$50M/mês, reduzindo latência 60% (200ms→80ms)"
+  - ✅ BOM: "Liderou migração monólito→microsserviços, elevando frequência de deploys de 3 para 300/dia"
+  - ❌ RUIM: "Trabalhei com Node.js e TypeScript no projeto"
+  - ❌ RUIM: "Participei da melhoria de performance"
+  - ❌ RUIM: "Ajudei a desenvolver APIs REST"
+- Usar métricas reais do histórico — podem ser reformuladas, nunca inventadas
+- Omitir experiências, formações e certificações que não agreguem valor para esta vaga
 
-**Formato de resposta:**
-
-```
-===================================================
-FASE 3: ESTRATÉGIA DE CURRÍCULO
-===================================================
-
-ESTRATÉGIA SELECIONADA: [A/B/C - Nome da estratégia]
-
-JUSTIFICATIVA:
-[Por que esta estratégia é a melhor para este candidato e vaga]
-
-DECISÕES ESTRATÉGICAS:
-
-📄 FORMATO:
-- Extensão: [1 página / 1-2 páginas]
-- Número de experiências: [X]
-- Ordem: [Cronológica / Por relevância]
-
-📋 EXPERIÊNCIAS SELECIONADAS:
-1. [Experiência 1] - [Profundidade: Alta/Média/Baixa] - [X bullets]
-   Motivo: [Por que incluir e com este nível de detalhe]
-
-2. [Experiência 2] - [Profundidade: Alta/Média/Baixa] - [X bullets]
-   Motivo: [...]
-
-❌ EXPERIÊNCIAS OMITIDAS:
-- [Experiência X]: [Motivo da omissão]
-
-💡 RESUMO PROFISSIONAL:
-- Incluir: [Sim/Não]
-- Enfoque: [Years of experience / Especialista / Resultados / Híbrido]
-
-🛠️ COMPETÊNCIAS TÉCNICAS:
-- Destacar: [Lista de tecnologias core]
-- Mencionar: [Lista de tecnologias complementares]
-- Omitir: [Lista de tecnologias irrelevantes]
-
-🚀 PROJETOS E EXTRAS:
-- Projetos: [Incluir/Omitir] - [Quais se incluir]
-- Certificações: [Incluir/Filtrar/Omitir]
-
-🎯 TRATAMENTO DE GAPS:
-[Para cada gap identificado na Fase 2]
-- Gap: [Nome do gap]
-  Estratégia: [Como minimizar/contextualizar]
-
-===================================================
-
-Estratégia definida e pronta para execução.
-
-Iniciando fase 4...
-```
-
-Passe para a próxima fase sem interrupção a menos que haja perguntas que precisam ser respondidas pelo usuário.
+**Exibir:** `5. Estratégia [A/B/C] selecionada — [nome da estratégia]`
 
 ---
 
-## FASE 4: CRIAÇÃO DO CURRÍCULO FINAL
+### ETAPA 6 — Geração do JSON
 
-**Especialista:** Redator de Currículos Profissionais
+**Exibir:** `6. Gerando currículo...`
 
-**Sua função nesta fase:**
+Gere o JSON completo seguindo rigorosamente o schema abaixo.
+Aplique todas as decisões estratégicas da Etapa 4 ao montar cada seção.
 
-Criar o currículo final em formato JSON estruturado, seguindo RIGOROSAMENTE a estratégia definida na Fase 3.
+**Regras do JSON:**
+- `titulo_curriculo`: máximo 3-4 palavras, minimalista, descreve o perfil (ex: `"Dev Backend Senior"`, `"Tech Lead Node"`, `"Engenheiro Cloud AWS"`)
+- `vaga_alvo.empresa`: nome real e completo da empresa da vaga — obrigatório
+- Seções não utilizadas: usar array vazio `[]`, nunca omitir o campo
+- Omitir `summary` inteiro se estratégia não incluir resumo profissional
+- Omitir categorias de `core_competencies` que ficarem vazias
 
-**Processo:**
-
-1. Siga a estrutura definida na Fase 3
-2. Para cada seção, use os dados do histórico profissional
-3. Reformule bullets para serem impactantes (fórmula: AÇÃO + CONTEXTO + RESULTADO)
-4. Use números e métricas reais do histórico
-5. Mantenha tom profissional e objetivo
-6. Verifique consistência de datas e informações
-
-**Regras de Reformulação de Bullets:**
-
-✅ **BOM:**
-- "Arquitetou sistema de pagamentos processando R$50M/mês, reduzindo latência em 60% (de 200ms para <80ms)"
-- "Liderou migração de monólito para microsserviços, aumentando frequência de deploys de 3 para 300/dia"
-
-❌ **RUIM:**
-- "Trabalhei com Node.js e TypeScript"
-- "Participei de projetos de microsserviços"
-- "Ajudei a melhorar a performance"
-
-**IMPORTANTE:** Não inclua dados pessoais no JSON (nome, email, telefone, etc). Estes serão adicionados automaticamente pelo sistema na renderização final.
-
-**Formato de resposta:**
-
-Gere um JSON completo seguindo este schema:
-
+**Schema completo:**
 ```json
 {
   "versao": "1.0.0",
-  "data_geracao": "2025-02-16",
+  "data_geracao": "YYYY-MM-DD",
   "vaga_alvo": {
-    "titulo": "Cargo da vaga",
-    "empresa": "Nome da empresa",
+    "titulo": "Cargo exato da vaga",
+    "empresa": "Nome real e completo da empresa",
     "localizacao": "Cidade, Estado"
   },
   "elegibilidade": {
-    [Cole aqui o JSON da Fase 2]
+    "pontuacao_estrelas": 4,
+    "pontuacao_percentual": 80,
+    "status": "ELEGÍVEL",
+    "pontos_fortes": [
+      "Ponto forte 1 — específico e baseado no histórico",
+      "Ponto forte 2"
+    ],
+    "pontos_fracos": [
+      "Gap ou ponto fraco 1 — específico"
+    ],
+    "gaps_criticos": [],
+    "recomendacao": "PROSSEGUIR",
+    "sugestoes": [
+      "Sugestão prática para aumentar chances ou se preparar para entrevista"
+    ]
   },
   "curriculo": {
+    "titulo_curriculo": "Dev Backend Senior",
     "meta": {
       "version": "1.0.0",
-      "last_updated": "2025-02-16",
+      "last_updated": "YYYY-MM-DD",
       "language": "pt-BR",
       "target_level": "senior"
     },
     "header": {
-      "headline": "Desenvolvedor Backend Sênior especializado em Node.js e AWS"
+      "headline": "Título profissional completo e descritivo para exibição no topo do currículo"
     },
-    "summary": "Resumo profissional de 2-4 linhas (opcional, se definido na estratégia)",
+    "summary": "Resumo profissional de 2-4 linhas focado na vaga. Omitir este campo inteiro se estratégia não incluir.",
     "core_competencies": {
       "languages_runtime": ["Node.js", "TypeScript", "Python"],
-      "frameworks_libraries": ["Express", "NestJS", "React"],
-      "databases": ["PostgreSQL", "MongoDB", "Redis"],
+      "frameworks_libraries": ["Express", "NestJS"],
+      "databases": ["PostgreSQL", "Redis", "MongoDB"],
       "cloud_infrastructure": ["AWS", "Docker", "Kubernetes"],
       "messaging_queues": ["RabbitMQ", "Kafka"],
       "testing_quality": ["Jest", "Cypress"],
       "devops_ci_cd": ["GitHub Actions", "Jenkins"],
-      "methodologies": ["Scrum", "TDD"]
+      "methodologies": ["Scrum", "TDD", "DDD"]
     },
     "experience": [
       {
-        "company": "Empresa XYZ",
-        "role": "Desenvolvedor Backend Sênior",
+        "company": "Nome da empresa",
+        "role": "Cargo exato",
         "period": {
-          "start": "2022-01",
+          "start": "YYYY-MM",
           "end": "current"
         },
         "location": {
-          "city": "São Paulo",
-          "state": "SP",
-          "remote": true
+          "city": "Cidade",
+          "state": "UF",
+          "remote": false
         },
         "highlights": [
-          "Bullet 1 com ação, contexto e resultado",
-          "Bullet 2 com métrica quantificável",
-          "Bullet 3 destacando impacto no negócio"
+          "Ação forte + contexto claro + resultado mensurável",
+          "Ação forte + contexto claro + resultado mensurável",
+          "Ação forte + contexto claro + resultado mensurável"
         ],
-        "stack": ["Node.js", "TypeScript", "PostgreSQL", "AWS"]
+        "stack": ["Tech1", "Tech2", "Tech3"]
       }
     ],
     "projects": [
       {
-        "name": "Nome do Projeto",
+        "name": "Nome do projeto",
         "type": "work",
-        "description": "Descrição breve do projeto",
+        "description": "Descrição objetiva de 1-2 linhas",
         "impact": [
-          "Impacto 1",
-          "Impacto 2"
+          "Impacto mensurável 1",
+          "Impacto mensurável 2"
         ],
-        "technologies": ["Tech 1", "Tech 2"]
+        "technologies": ["Tech1", "Tech2"]
       }
     ],
     "education": [
       {
-        "institution": "Universidade X",
-        "degree": "Bacharelado em Ciência da Computação",
+        "institution": "Nome da instituição",
+        "degree": "Nome do curso",
         "period": {
-          "start": "2015",
-          "end": "2019"
+          "start": "YYYY",
+          "end": "YYYY"
         }
       }
     ],
     "certifications": [
       {
-        "name": "AWS Certified Solutions Architect",
-        "issuer": "Amazon Web Services",
-        "date": "2023-06"
+        "name": "Nome da certificação",
+        "issuer": "Empresa emissora",
+        "date": "YYYY-MM"
       }
     ],
     "languages": [
@@ -479,86 +349,48 @@ Gere um JSON completo seguindo este schema:
 }
 ```
 
-Após o JSON, adicione:
-
-```
-===================================================
-FASE 4: CURRÍCULO FINAL CRIADO
-===================================================
-
-✅ Currículo criado com sucesso seguindo a estratégia definida.
-
-RESUMO:
-- Seções incluídas: [X]
-- Experiências: [X]
-- Total de highlights: [X]
-- Tecnologias destacadas: [X]
-
-===================================================
-
-Iniciando fase 5...
-```
-
-Passe para a próxima fase sem interrupção a menos que haja perguntas que precisam ser respondidas pelo usuário.
+**Valores válidos para `proficiency`:** `nativo` | `fluente` | `avançado` | `intermediário` | `básico`
+**Valores válidos para `target_level`:** `junior` | `pleno` | `senior` | `tech-lead` | `staff` | `principal`
+**Valores válidos para `recomendacao`:** `NÃO PROSSEGUIR` | `PROSSEGUIR COM ATENÇÃO` | `PROSSEGUIR`
+**Valores válidos para `status`:** `NÃO ELEGÍVEL` | `BAIXA ELEGIBILIDADE` | `PARCIALMENTE ELEGÍVEL` | `ELEGÍVEL` | `ALTAMENTE ELEGÍVEL`
 
 ---
 
-## FASE 5: FINALIZAÇÃO
+### ETAPA 7 — Validação Final
 
-**Especialista:** Coordenador do Sistema
+**Exibir:** `7. Validando JSON...`
 
-**Sua função nesta fase:**
+Verifique internamente cada item antes de gerar o output:
 
-Validar e entregar o JSON final com toda a análise e currículo.
+- [ ] JSON é sintaticamente válido (sem vírgulas extras, aspas corretas, chaves fechadas)
+- [ ] `vaga_alvo.empresa` contém o nome real da empresa (não vazio, não genérico)
+- [ ] `vaga_alvo.titulo` contém o cargo real da vaga
+- [ ] `curriculo.titulo_curriculo` está preenchido com máximo 4 palavras
+- [ ] `curriculo.header.headline` está preenchido
+- [ ] Datas em formato `YYYY-MM` para experiências e `YYYY` para educação
+- [ ] `elegibilidade` contém todos os campos obrigatórios
+- [ ] Nenhum dado pessoal no JSON (nome, email, telefone, CPF, endereço)
+- [ ] Nenhuma informação inventada — tudo tem base no histórico
+- [ ] Arrays vazios `[]` onde não há conteúdo (nunca `null` ou campo omitido)
 
-**Checklist de Validação:**
-
-- ✅ JSON está válido (syntax check)
-- ✅ Todas as seções obrigatórias presentes
-- ✅ Datas no formato correto (YYYY-MM-DD, YYYY-MM)
-- ✅ Análise de elegibilidade completa
-- ✅ Currículo segue estratégia definida
-- ✅ Sem informações inventadas
-- ✅ Sem dados pessoais no JSON (serão adicionados na renderização)
-
-**Formato de resposta:**
-
-```
-===================================================
-FASE 5: PROCESSO CONCLUÍDO
-===================================================
-
-✅ VALIDAÇÃO CONCLUÍDA
-
-STATUS FINAL:
-- Elegibilidade: ⭐⭐⭐⭐ (4/5)
-- Recomendação: PROSSEGUIR
-- Currículo: Criado e otimizado
-
-PRÓXIMOS PASSOS PARA O CANDIDATO:
-1. Copiar o JSON da Fase 4
-2. Colar no sistema de visualização
-3. Revisar o currículo renderizado
-4. Fazer download em PDF
-5. Enviar candidatura!
-
-===================================================
-
-O JSON final está disponível acima (Fase 4).
-Copie todo o conteúdo JSON e cole no sistema para visualização.
-
-PROCESSO FINALIZADO COM SUCESSO! 🎉
-```
+Se identificar erro no JSON durante validação: corrija silenciosamente antes de exibir.
 
 ---
 
-## INSTRUÇÕES FINAIS
+## OUTPUT FINAL
 
-1. Execute TODAS as 5 fases em sequência
-2. Seja honesto nas avaliações - não minta para agradar
-3. Use dados reais do histórico
-4. Não invente tecnologias ou experiências
-5. O JSON final deve ser válido e completo
-6. Não inclua dados pessoais no JSON
+Após as 7 linhas de progresso, exiba **exatamente** nesta ordem, sem nenhum texto adicional:
+
+```
+Concluído.
+
+Cole o conteúdo abaixo na caixa de texto "Colar Resposta do ChatGPT"
+(clique em "➡️ Próxima Etapa: Colar Resposta" após fechar este prompt)
+e depois clique em "✨ Gerar Currículo":
+
+```json
+{ JSON completo aqui }
+```
+```
 
 **FIM DO PROMPT MASTER**

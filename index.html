@@ -5,6 +5,120 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema de Geração de Currículos Estratégicos</title>
 <link rel="stylesheet" href="assets/css/main.css">
+<style>
+    /* ── Visualizador em iframe ── */
+    .visualizador-modal-content {
+        width: 96vw;
+        max-width: 1050px;
+        height: 92vh;
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        overflow: hidden;
+    }
+    .visualizador-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        background: white;
+        border-radius: 12px 12px 0 0;
+        flex-shrink: 0;
+    }
+    .visualizador-header h2 {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 60%;
+    }
+    .visualizador-header .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    #resumeIframe {
+        flex: 1;
+        width: 100%;
+        border: none;
+        border-radius: 0 0 12px 12px;
+        background: #f9fafb;
+    }
+
+    /* ── Modal de confirmação ── */
+    .confirm-modal-content {
+        max-width: 440px;
+        text-align: center;
+    }
+    .confirm-icon {
+        font-size: 40px;
+        margin-bottom: 12px;
+    }
+    .confirm-modal-content h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 10px;
+    }
+    .confirm-modal-content p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }
+    .confirm-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    /* ── Modal descrição ── */
+    .descricao-modal-content {
+        max-width: 700px;
+    }
+    .descricao-modal-content h2 {
+        margin-bottom: 16px;
+    }
+    #descricaoTexto {
+        white-space: pre-wrap;
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    /* ── Spinner de carregamento no iframe ── */
+    .iframe-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-secondary);
+        font-size: 15px;
+        gap: 10px;
+    }
+    .spinner {
+        width: 22px; height: 22px;
+        border: 3px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Botão de copiar no modal de prompt ── */
+    .output-header .btn { font-family: inherit; }
+</style>
 </head>
 <body>
 <div class="container">
@@ -18,6 +132,7 @@
         <button class="tab-btn" data-tab="vagas">🎯 Vagas</button>
     </div>
 
+    <!-- ABA MEUS DADOS -->
     <div class="tab-content active" id="tab-data">
         <h2>Meus Dados Profissionais</h2>
         <div class="section">
@@ -74,13 +189,12 @@
         <div class="actions">
             <button class="btn btn-primary" onclick="saveData()">💾 Salvar Dados</button>
         </div>
-
         <div class="status" id="saveStatus"></div>
     </div>
 
+    <!-- ABA VAGAS -->
     <div class="tab-content" id="tab-vagas">
         <h2>Gerenciamento de Vagas</h2>
-        
         <div class="section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
@@ -97,15 +211,15 @@
                 </div>
                 <button class="btn btn-primary" onclick="openNovaVagaModal()">➕ Nova Vaga</button>
             </div>
-
             <div id="vagasList"></div>
-
             <div id="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;"></div>
         </div>
     </div>
 </div>
 
-<!-- Modal Nova Vaga -->
+<!-- ============================================================ -->
+<!-- MODAL: Nova Vaga -->
+<!-- ============================================================ -->
 <div id="novaVagaModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeNovaVagaModal()">&times;</span>
@@ -130,7 +244,9 @@
     </div>
 </div>
 
-<!-- Modal Editar Vaga -->
+<!-- ============================================================ -->
+<!-- MODAL: Editar Vaga -->
+<!-- ============================================================ -->
 <div id="editVagaModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeEditVagaModal()">&times;</span>
@@ -167,7 +283,23 @@
     </div>
 </div>
 
-<!-- Modal Gerar Prompt -->
+<!-- ============================================================ -->
+<!-- MODAL: Ver Descrição da Vaga -->
+<!-- ============================================================ -->
+<div id="descricaoModal" class="modal" style="display: none;">
+    <div class="modal-content descricao-modal-content">
+        <span class="close" onclick="closeDescricaoModal()">&times;</span>
+        <h2 id="descricaoTitulo">Descrição da Vaga</h2>
+        <pre id="descricaoTexto"></pre>
+        <div class="actions" style="margin-top: 16px;">
+            <button class="btn btn-secondary" onclick="closeDescricaoModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: Gerar Prompt -->
+<!-- ============================================================ -->
 <div id="promptModal" class="modal" style="display: none;">
     <div class="modal-content modal-large">
         <span class="close" onclick="closePromptModal()">&times;</span>
@@ -186,39 +318,71 @@
     </div>
 </div>
 
-<!-- Modal Colar Resposta -->
+<!-- ============================================================ -->
+<!-- MODAL: Colar / Editar Resposta JSON -->
+<!-- ============================================================ -->
 <div id="respostaModal" class="modal" style="display: none;">
     <div class="modal-content modal-large">
         <span class="close" onclick="closeRespostaModal()">&times;</span>
-        <h2>Colar Resposta do ChatGPT</h2>
+        <h2 id="respostaModalTitulo">Colar Resposta do ChatGPT</h2>
         <input type="hidden" id="resposta_vaga_uuid">
-        <p class="help-text">Cole aqui o JSON completo retornado pelo ChatGPT:</p>
+        <p class="help-text" id="respostaModalDescricao">Cole aqui o JSON completo retornado pelo ChatGPT:</p>
         <div class="form-group">
-            <textarea id="jsonResposta" rows="15" placeholder='{ "versao": "1.0.0", "data_geracao": "2025-02-16", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
+            <textarea id="jsonResposta" rows="18" placeholder='{ "versao": "1.0.0", "data_geracao": "2025-02-16", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
         </div>
         <div class="actions">
-            <button class="btn btn-success btn-large" onclick="gerarCurriculo()">✨ Gerar Currículo</button>
-            <button class="btn btn-secondary" onclick="voltarParaPrompt()">⬅️ Voltar</button>
+            <button id="btnGerarCurriculo" class="btn btn-success btn-large" onclick="gerarCurriculo()">✨ Gerar Currículo</button>
+            <button id="btnVoltarPrompt" class="btn btn-secondary" onclick="voltarParaPrompt()">⬅️ Voltar</button>
         </div>
         <div class="status" id="respostaStatus"></div>
     </div>
 </div>
 
-<!-- Modal Visualizar Currículo -->
+<!-- ============================================================ -->
+<!-- MODAL: Elegibilidade + Ações do Currículo -->
+<!-- ============================================================ -->
 <div id="curriculoModal" class="modal" style="display: none;">
     <div class="modal-content modal-large">
         <span class="close" onclick="closeCurriculoModal()">&times;</span>
-        <h2>Análise de Elegibilidade e Currículo</h2>
-        
+        <h2>Análise de Elegibilidade</h2>
         <div class="section">
-            <h3>📊 Análise de Elegibilidade</h3>
             <div id="eligibilityContent"></div>
         </div>
-
         <div class="actions">
             <button class="btn btn-success" onclick="abrirVisualizacaoCurriculo()">👁️ Visualizar Currículo</button>
             <button class="btn btn-primary" onclick="downloadJsonCurriculo()">💾 Baixar JSON</button>
             <button class="btn btn-secondary" onclick="closeCurriculoModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: Visualizador do Currículo (iframe interno) -->
+<!-- ============================================================ -->
+<div id="visualizadorModal" class="modal" style="display: none;">
+    <div class="modal-content visualizador-modal-content">
+        <div class="visualizador-header">
+            <h2 id="visualizadorTitulo">Currículo</h2>
+            <div class="header-actions">
+                <button class="btn btn-primary btn-small" onclick="imprimirDoVisualizador()">🖨️ Imprimir / PDF</button>
+                <button class="btn btn-secondary btn-small" onclick="closeVisualizadorModal()">✕ Fechar</button>
+            </div>
+        </div>
+        <iframe id="resumeIframe" title="Visualizador de Currículo"></iframe>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: Confirmação genérica -->
+<!-- ============================================================ -->
+<div id="confirmModal" class="modal" style="display: none;">
+    <div class="modal-content confirm-modal-content">
+        <div class="confirm-icon">⚠️</div>
+        <h3 id="confirmTitulo">Confirmar ação</h3>
+        <p id="confirmMensagem">Tem certeza?</p>
+        <div class="confirm-actions">
+            <button id="confirmBtn" class="btn btn-danger">Confirmar</button>
+            <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
         </div>
     </div>
 </div>

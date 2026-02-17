@@ -18,26 +18,56 @@ function switchTab(tabName) {
 
 async function loadFromServer() {
     try {
-        const personalRes = await fetch('/data/personal-data.json');
-        const curriculoRes = await fetch('/data/curriculo.json'); // se tiver um arquivo JSON do currículo
-        const vagaRes = await fetch('/data/vaga-alvo.json'); // ou vem junto com curriculo.json
+        const timestamp = new Date().getTime();
 
-        const personal = personalRes.ok ? await personalRes.json() : {};
-        const curriculo = curriculoRes.ok ? await curriculoRes.json() : {};
-        const vaga = vagaRes.ok ? await vagaRes.json() : {};
+        // Carregar dados pessoais
+        const personalRes = await fetch(`/data/personal-data.json?t=${timestamp}`);
+        if (personalRes.ok) {
+            const personal = await personalRes.json();
+            preencherDadosPessoais(personal);
+        }
 
-        // Salvar tudo no sessionStorage
-        sessionStorage.setItem('current_resume', JSON.stringify({
-            personalData: personal,
-            curriculo: curriculo,
-            vaga_alvo: vaga
-        }));
+        // Carregar histórico profissional
+        const historyRes = await fetch(`/data/personal-history.md?t=${timestamp}`);
+        if (historyRes.ok) {
+            const history = await historyRes.text();
+            const historyField = document.getElementById('history');
+            if (historyField && history) {
+                historyField.value = history;
+            }
+        }
 
     } catch (err) {
         console.error('Erro ao carregar dados do servidor:', err);
     }
 }
 
+function preencherDadosPessoais(personal) {
+    // Campos de texto
+    const campos = ['name', 'email', 'phone', 'city', 'state', 'linkedin', 'github', 'portfolio'];
+    campos.forEach(campo => {
+        const el = document.getElementById(campo);
+        if (el && personal[campo] !== undefined) {
+            el.value = personal[campo];
+        }
+    });
+
+    // Checkbox remoto
+    const remoteEl = document.getElementById('remote');
+    if (remoteEl) remoteEl.checked = personal.remote === true;
+
+    // Checkboxes de inclusão
+    const checkboxes = [
+        'include_phone', 'include_city', 'include_state',
+        'include_remote', 'include_linkedin', 'include_github', 'include_portfolio'
+    ];
+    checkboxes.forEach(campo => {
+        const el = document.getElementById(campo);
+        if (el && personal[campo] !== undefined) {
+            el.checked = personal[campo] === true;
+        }
+    });
+}
 
 async function saveData() {
     const personal = {
@@ -50,9 +80,8 @@ async function saveData() {
         linkedin: document.getElementById('linkedin').value.trim(),
         github: document.getElementById('github').value.trim(),
         portfolio: document.getElementById('portfolio').value.trim(),
-        // Incluir flags de quais campos devem aparecer no currículo
-        include_name: document.getElementById('include_name').checked,
-        include_email: document.getElementById('include_email').checked,
+        include_name: true,
+        include_email: true,
         include_phone: document.getElementById('include_phone').checked,
         include_city: document.getElementById('include_city').checked,
         include_state: document.getElementById('include_state').checked,
@@ -90,7 +119,6 @@ async function saveData() {
         if (!resHistory.ok) throw new Error('Erro ao salvar history');
 
         showStatus('success', '✅ Dados salvos com sucesso!');
-        await loadFromServer();
     } catch (err) {
         console.error(err);
         showStatus('error', '❌ Erro ao salvar dados');
@@ -102,5 +130,5 @@ function showStatus(type, msg) {
     s.className = `status ${type}`;
     s.textContent = msg;
     s.style.display = 'block';
-    setTimeout(()=>s.style.display='none',5000);
+    setTimeout(() => s.style.display = 'none', 5000);
 }
