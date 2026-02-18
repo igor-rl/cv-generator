@@ -1,31 +1,36 @@
 /**
- * backup.js — Import / Export backup (JSON puro)
+ * backup.js — Import / Export backup (.cvx format)
+ * CVX = encrypted, device-specific, not human-readable
  */
 
 window.BackupModule = (() => {
 
   // ── Exportar backup ──────────────────────────────────────────────
   async function exportBackup() {
+    const btn = document.getElementById('btn-export');
+    if (btn) { btn.disabled = true; btn.textContent = 'Exportando…'; }
+
     try {
-      const backup = await DB.exportBackup();
+      const backup  = await DB.exportBackup();
+      const cvxData = await CVX.encode(backup);
 
-      // Pequeno log estratégico
-      console.log(`[Backup Export] Personal: ${backup.personal ? '✓' : '✗'}, Vagas: ${backup.vagas.length}, Currículos: ${backup.curriculos.length}`);
-
-      // Converte em JSON puro
-      const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+      const blob = new Blob([cvxData], { type: 'application/octet-stream' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
-
       a.href     = url;
-      a.download = `backup-curriculos-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `curriculos-${new Date().toISOString().split('T')[0]}.cvx`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      App.showStatus('backup-status', 'success', '✓ Backup exportado com sucesso!');
+      App.showStatus('backup-status', 'success',
+        `✓ Backup exportado! (${backup.vagas?.length||0} vagas, ${backup.curriculos?.length||0} currículos)`);
     } catch (err) {
       console.error('[Backup Export Error]', err);
       App.showStatus('backup-status', 'error', 'Erro ao exportar: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Exportar'; }
     }
   }
 
@@ -34,26 +39,24 @@ window.BackupModule = (() => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const btn = document.getElementById('btn-import-label');
+
     try {
       const text   = await file.text();
-      const backup = JSON.parse(text);
+      const backup = await CVX.decode(text);
 
       if (!backup.version) throw new Error('Arquivo inválido ou sem versão');
 
-      // Chama o import genérico do DB
       await DB.importBackup(backup);
 
-      // Log estratégico
-      console.log(`[Backup Import] Personal: ${backup.personal ? '✓' : '✗'}, Vagas: ${backup.vagas?.length || 0}, Currículos: ${backup.curriculos?.length || 0}`);
-
-      App.showStatus('backup-status', 'success', '✓ Backup importado com sucesso! Recarregando…');
-      setTimeout(() => location.reload(), 1500);
+      App.showStatus('backup-status', 'success',
+        `✓ Backup importado! (${backup.vagas?.length||0} vagas, ${backup.curriculos?.length||0} currículos). Recarregando…`);
+      setTimeout(() => location.reload(), 1800);
     } catch (err) {
       console.error('[Backup Import Error]', err);
       App.showStatus('backup-status', 'error', 'Erro ao importar: ' + err.message);
     }
 
-    // Limpa input para permitir novo upload
     event.target.value = '';
   }
 

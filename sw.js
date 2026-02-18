@@ -1,9 +1,8 @@
 /**
- * sw.js — Service Worker
- * Cache-first para assets estáticos, network-first para dados dinâmicos
+ * sw.js — Service Worker v4
  */
 
-const CACHE_NAME = 'curriculos-v3.0.12';
+const CACHE_NAME = 'curriculos-v4.0.2';
 
 const STATIC_ASSETS = [
   '/',
@@ -12,14 +11,18 @@ const STATIC_ASSETS = [
   '/assets/css/main.css',
   '/assets/css/resume.css',
   '/assets/js/db.js',
-  '/assets/js/main.js',
+  '/assets/js/app.js',
+  '/assets/js/groq.js',
+  '/assets/js/profile.js',
+  '/assets/js/history.js',
   '/assets/js/vagas.js',
+  '/assets/js/backup.js',
+  '/assets/js/settings.js',
   '/core/prompts/master-prompt.md',
+  '/core/prompts/change-prompt.md',
   '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&family=DM+Mono:wght@400;500&display=swap',
 ];
 
-// ── Install ───────────────────────────────────────────────────────────────────
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
@@ -27,7 +30,6 @@ self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
-// ── Activate ──────────────────────────────────────────────────────────────────
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -37,20 +39,18 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-
-  // Ignorar extensões Chrome e requests não-GET
   if (e.request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
+  // Don't cache GROQ API calls
+  if (url.hostname === 'api.groq.com') return;
 
-  // Cache-first para assets estáticos
-  const isStatic = STATIC_ASSETS.some(a => e.request.url.includes(a.replace('/', '')));
-  const isCorePrompt = url.pathname.startsWith('/core/prompts/');
+  const isStatic = STATIC_ASSETS.some(a => e.request.url.endsWith(a.replace(/^\//, '')));
+  const isCoreFile = url.pathname.startsWith('/core/');
   const isFont = url.hostname.includes('fonts.g');
 
-  if (isStatic || isCorePrompt || isFont) {
+  if (isStatic || isCoreFile || isFont) {
     e.respondWith(
       caches.match(e.request).then(cached => {
         if (cached) return cached;
@@ -64,7 +64,6 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Network-first com fallback para cache
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
   );
