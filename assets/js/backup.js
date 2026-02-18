@@ -4,22 +4,15 @@
 
 window.BackupModule = (() => {
 
+  // ── Exportar backup ──────────────────────────────────────────────
   async function exportBackup() {
     try {
-      // Pega todos os dados do DB em formato completo
-      const backup = {
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        personal: await DB.getPersonal(),
-        vagas: await DB.getVagas(),
-        curriculos: await DB.getCurriculos(),
-        experiences: await DB.getExperiences(),
-        education: await DB.getEducation(),
-        certifications: await DB.getCertifications(),
-        languages: await DB.getLanguages()
-      };
+      const backup = await DB.exportBackup();
 
-      // Converte em JSON puro (não legível para humanos)
+      // Pequeno log estratégico
+      console.log(`[Backup Export] Personal: ${backup.personal ? '✓' : '✗'}, Vagas: ${backup.vagas.length}, Currículos: ${backup.curriculos.length}`);
+
+      // Converte em JSON puro
       const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
@@ -31,10 +24,12 @@ window.BackupModule = (() => {
 
       App.showStatus('backup-status', 'success', '✓ Backup exportado com sucesso!');
     } catch (err) {
+      console.error('[Backup Export Error]', err);
       App.showStatus('backup-status', 'error', 'Erro ao exportar: ' + err.message);
     }
   }
 
+  // ── Importar backup ──────────────────────────────────────────────
   async function importBackup(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -43,23 +38,22 @@ window.BackupModule = (() => {
       const text   = await file.text();
       const backup = JSON.parse(text);
 
-      if (!backup.version) throw new Error('Arquivo inválido');
+      if (!backup.version) throw new Error('Arquivo inválido ou sem versão');
 
-      // Importa cada seção para os stores corretos
-      if (backup.personal) await DB.setPersonal(backup.personal);
-      if (backup.vagas) await DB.setVagas(backup.vagas);
-      if (backup.curriculos) await DB.setCurriculos(backup.curriculos);
-      if (backup.experiences) await DB.setExperiences(backup.experiences);
-      if (backup.education) await DB.setEducation(backup.education);
-      if (backup.certifications) await DB.setCertifications(backup.certifications);
-      if (backup.languages) await DB.setLanguages(backup.languages);
+      // Chama o import genérico do DB
+      await DB.importBackup(backup);
 
-      App.showStatus('backup-status', 'success', '✓ Backup importado! Recarregando…');
+      // Log estratégico
+      console.log(`[Backup Import] Personal: ${backup.personal ? '✓' : '✗'}, Vagas: ${backup.vagas?.length || 0}, Currículos: ${backup.curriculos?.length || 0}`);
+
+      App.showStatus('backup-status', 'success', '✓ Backup importado com sucesso! Recarregando…');
       setTimeout(() => location.reload(), 1500);
     } catch (err) {
+      console.error('[Backup Import Error]', err);
       App.showStatus('backup-status', 'error', 'Erro ao importar: ' + err.message);
     }
 
+    // Limpa input para permitir novo upload
     event.target.value = '';
   }
 

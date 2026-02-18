@@ -3,7 +3,7 @@
  * Cache-first para assets estáticos, network-first para dados dinâmicos
  */
 
-const CACHE_NAME = 'curriculos-v3.0.2';
+const CACHE_NAME = 'curriculos-v3.0.12';
 
 const STATIC_ASSETS = [
   '/',
