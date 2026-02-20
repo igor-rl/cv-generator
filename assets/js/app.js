@@ -12,7 +12,6 @@ const App = (() => {
     handleInstallPrompt();
     registerSW();
 
-    // Router determina a página inicial pela URL
     const initialPage = Router.init();
     navigateTo(initialPage, { updateUrl: false });
   }
@@ -42,20 +41,18 @@ const App = (() => {
       p.classList.toggle('active', p.id === `page-${page}`);
     });
 
-    // Atualiza a URL via router (apenas quando não vem do popstate)
     if (updateUrl && window.Router) {
       Router.navigate(page, { replace: false });
     }
 
-    // Carrega dados da página
     switch (page) {
-      case 'vagas':    window.VagasModule?.load();               break;
-      case 'profile':  window.ProfileModule?.load();             break;
-      case 'exp':      window.HistoryModule?.loadExperiences();  break;
-      case 'edu':      window.HistoryModule?.loadEducation();    break;
+      case 'vagas':    window.VagasModule?.load();                 break;
+      case 'profile':  window.ProfileModule?.load();               break;
+      case 'exp':      window.HistoryModule?.loadExperiences();    break;
+      case 'edu':      window.HistoryModule?.loadEducation();      break;
       case 'certs':    window.HistoryModule?.loadCertifications(); break;
-      case 'langs':    window.HistoryModule?.loadLanguages();    break;
-      case 'settings': window.SettingsModule?.load();            break;
+      case 'langs':    window.HistoryModule?.loadLanguages();      break;
+      case 'settings': window.SettingsModule?.load();              break;
     }
 
     document.getElementById('historyTypeModal')?.classList.remove('open');
@@ -117,26 +114,18 @@ const App = (() => {
         const reg = await navigator.serviceWorker.register('/sw.js');
         console.log('[App] SW registrado:', reg.scope);
 
-        // Ouve mensagens do SW
         navigator.serviceWorker.addEventListener('message', (event) => {
           const msg = event.data;
           if (!msg) return;
-
           if (msg.type === 'SW_UPDATED') {
             console.log('[App] SW atualizado para versão:', msg.version);
             if (msg.reload) {
-              // Recarrega automaticamente para garantir versão nova
-              // Pequeno delay para o SW terminar de ativar
-              setTimeout(() => {
-                window.location.reload();
-              }, 500);
+              setTimeout(() => window.location.reload(), 500);
             }
           }
         });
 
-        // Verifica atualizações periodicamente
-        setInterval(() => reg.update(), 60 * 1000); // a cada 1 minuto
-
+        setInterval(() => reg.update(), 60 * 1000);
       } catch (err) {
         console.warn('[App] SW falhou:', err);
       }
@@ -144,12 +133,23 @@ const App = (() => {
   }
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
+  /*
+   * SCROLL NAS MODAIS — 100% CSS, zero JS bloqueando eventos.
+   *
+   * O scroll funciona pela cadeia CSS em modals.css:
+   *   .modal-overlay  → position:fixed, display:none/flex
+   *   .modal-box      → height:min(90vh,800px), display:flex, flex-direction:column, overflow:clip
+   *   .modal-body     → flex:1, min-height:0, overflow-y:auto
+   *
+   * Para travar o body: apenas overflow:hidden enquanto modal está aberta.
+   * NÃO usar position:fixed no body (quebra scroll position e causa layout shift).
+   * NÃO usar JS preventDefault em touchmove/wheel (briga com o browser).
+   */
   function openModal(id) {
     const el = document.getElementById(id);
     if (el) {
       el.classList.add('open');
       document.body.style.overflow = 'hidden';
-      // Fecha ao clicar no overlay
       const close = (e) => { if (e.target === el) closeModal(id); };
       el.addEventListener('click', close, { once: true });
     }
@@ -226,7 +226,6 @@ const App = (() => {
   };
 })();
 
-// ── Global wrappers para atributos onclick no HTML ────────────────────────────
 function navigateTo(page)   { App.navigateTo(page); }
 function openModal(id)      { App.openModal(id); }
 function closeModal(id)     { App.closeModal(id); }

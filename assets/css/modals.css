@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   modals.css — Todas as modais: overlay, box, header, body, footer
+   modals.css
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Base Modal ──────────────────────────────────────────────────────────── */
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -10,43 +10,51 @@
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 500;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   padding: 20px;
   padding-top: calc(20px + var(--safe-top));
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  overflow: hidden;
-  touch-action: none;
+  box-sizing: border-box;
 }
 
 .modal-overlay.open {
-  opacity: 1;
-  pointer-events: all;
+  display: flex;
 }
 
+/* ── Box ─────────────────────────────────────────────────────────────────── */
+/*
+ * TRÊS REGRAS OBRIGATÓRIAS para scroll funcionar:
+ *
+ * 1. height: min(90vh, 800px)  → altura EXPLÍCITA (não só max-height).
+ *    Sem isso, o modal-body (flex:1) cresce infinitamente e o
+ *    overflow-y nunca dispara — o conteúdo nunca precisa rolar.
+ *
+ * 2. display:flex + flex-direction:column
+ *    → header e footer ficam fixos; modal-body ocupa o meio.
+ *
+ * 3. overflow: clip  (NÃO overflow:hidden)
+ *    → recorta visualmente para manter o border-radius,
+ *    MAS não cria scroll container próprio.
+ *    overflow:hidden criaria scroll container e engolia
+ *    o scroll do filho .modal-body.
+ */
 .modal-box {
   background: var(--surface);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 580px;
-  max-height: calc(90vh - var(--safe-top));
+  height: min(90vh, 800px);
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* mantém border-radius; scroll é só no .modal-body */
-  transform: scale(0.97) translateY(8px);
-  transition: transform 0.2s ease;
+  overflow: clip;
 }
 
-.modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
-
 .modal-box-lg { max-width: 860px; }
-.modal-box-sm { max-width: 420px; }
+.modal-box-sm { max-width: 420px; height: min(80vh, 500px); }
 
-/* ── Modal sections ──────────────────────────────────────────────────────── */
+/* ── Header — fixo no topo ───────────────────────────────────────────────── */
 .modal-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-light);
@@ -54,6 +62,7 @@
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  background: var(--surface);
 }
 
 .modal-title {
@@ -66,35 +75,42 @@
 .modal-close {
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
-  border: none; background: var(--surface-dim);
-  border-radius: 8px; cursor: pointer;
+  border: none;
+  background: var(--surface-dim);
+  border-radius: 8px;
+  cursor: pointer;
   color: #6b7589;
   transition: all 0.15s;
   flex-shrink: 0;
 }
 .modal-close:hover { background: var(--surface-mid); color: var(--ink); }
 
+/* ── Body — scrollável ───────────────────────────────────────────────────── */
 /*
- * CRÍTICO: .modal-body é o ÚNICO elemento scrollável da modal.
+ * DUAS REGRAS OBRIGATÓRIAS:
  *
- * min-height: 0 → sem isso, flex children não encolhem (bug clássico do flex)
- * overflow-y: auto → scroll interno do body da modal
- * overscroll-behavior: contain → impede scroll bleeding para fundo da página
- * touch-action: pan-y → scroll vertical em iOS dentro do modal-body
- * -webkit-overflow-scrolling: touch → momentum scroll em iOS
+ * 1. flex: 1 + min-height: 0
+ *    flex:1 faz o body ocupar o espaço entre header e footer.
+ *    min-height:0 é CRÍTICO: sem ele, Safari e Firefox não deixam
+ *    o flex-child encolher abaixo do tamanho do conteúdo —
+ *    o overflow-y nunca dispara.
+ *
+ * 2. overflow-y: auto
+ *    Só funciona quando o elemento tem altura limitada (garantida
+ *    pelo flex:1 dentro do .modal-box com height explícito acima).
  */
 .modal-body {
-  padding: 24px;
-  overflow-y: auto;
-  overflow-x: hidden;
   flex: 1;
   min-height: 0;
-  scrollbar-width: thin;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+  scrollbar-width: thin;
 }
 
+/* ── Footer — fixo no rodapé ─────────────────────────────────────────────── */
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border-light);
@@ -107,61 +123,42 @@
   flex-wrap: wrap;
 }
 
-/* ── TEXTAREA DENTRO DE MODAIS — SCROLL GARANTIDO ────────────────────────────
- *
- * PROBLEMA: textareas dentro de modais não rolam em iOS/Safari e alguns Android.
- *
- * CAUSA: o touch-action: none no .modal-overlay bloqueia gestos de scroll,
- * e o textarea não tem sua própria área de scroll reconhecida pelo browser.
- *
- * SOLUÇÃO:
- * 1. overflow-y: auto → habilita scroll interno
- * 2. touch-action: pan-y → informa ao browser que gestos verticais devem
- *    ser tratados como scroll (não ignorados pelo overlay)
- * 3. -webkit-overflow-scrolling: touch → scroll inercial em iOS (legado)
- * 4. overscroll-behavior: contain → impede propagação do scroll para o modal-body
- * 5. resize: vertical → permite redimensionar (opcional mas convencional)
- *
- * Estes estilos são aplicados a TODOS os textareas dentro de modais.
- */
-.modal-body .form-textarea,
-.modal-body textarea {
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
+/* ── Textareas dentro do modal-body ──────────────────────────────────────── */
+.modal-body textarea,
+.modal-body .form-textarea {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   resize: vertical;
-  /* Garante que o textarea não cresça além de uma altura razoável */
-  max-height: 400px;
+  max-height: 360px;
 }
 
-/* ── Viz Modal (iframe de currículo) ─────────────────────────────────────── */
+/* ── Viz Modal (iframe currículo) ────────────────────────────────────────── */
 .modal-viz .modal-box {
   max-width: 1000px;
-  height: calc(92vh - var(--safe-top));
-  max-height: calc(92vh - var(--safe-top));
+  height: min(92vh, 900px);
 }
 
 .modal-viz .modal-body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
 #resumeIframe {
   flex: 1;
+  min-height: 0;
   width: 100%;
   border: none;
   background: #f9fafb;
   display: block;
-  min-height: 0;
 }
 
-/* ── GROQ Progress Modal ─────────────────────────────────────────────────── */
+/* ── GROQ Progress ───────────────────────────────────────────────────────── */
 #groqProgressModal .modal-box {
   max-width: 380px;
-  text-align: center;
+  height: auto;
+  min-height: 280px;
 }
 
 .groq-progress-content {
@@ -193,7 +190,7 @@
   min-height: 20px;
 }
 
-/* ── Suggest Change Manual Section ──────────────────────────────────────── */
+/* ── Suggest Change manual section ──────────────────────────────────────── */
 .suggest-manual-section {
   display: none;
   margin-top: 16px;
@@ -213,36 +210,34 @@
   margin-bottom: 12px;
 }
 
-/* ── Mobile Modal overrides ──────────────────────────────────────────────── */
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .modal-overlay {
     padding: 0;
     align-items: flex-end;
-    touch-action: none; /* overlay bloqueia, mas filhos podem usar pan-y */
   }
 
   .modal-box {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    max-height: 92vh;
-    transform: translateY(20px);
+    max-width: 100%;
+    width: 100%;
+    height: min(92vh, 92vh);
   }
 
-  .modal-overlay.open .modal-box { transform: translateY(0); }
-
-  /* Em mobile, modal-body e textareas DEVEM usar pan-y */
-  .modal-body {
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
+  .modal-box-sm {
+    height: min(70vh, 500px);
   }
 
-  .modal-body .form-textarea,
-  .modal-body textarea {
-    touch-action: pan-y !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .modal-footer .btn { width: auto; flex: 1; }
+  .modal-footer .btn { flex: 1; }
   .modal-footer .btn-ghost { flex: 0; }
 
-  .modal-viz .modal-box { height: 100vh; max-height: 100vh; border-radius: 0; }
+  .modal-viz .modal-box {
+    height: 100vh;
+    border-radius: 0;
+  }
+}
+
+/* ── Print ───────────────────────────────────────────────────────────────── */
+@media print {
+  .modal-overlay { display: none !important; }
 }

@@ -451,12 +451,12 @@
       </div>
       <button class="modal-close" onclick="closeModal('vagaDetailModal')">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <div id="detail_eligibility_section" style="display:none;"></div>
       <div style="margin-bottom:16px;">
         <div style="font-size:12px;color:#8b92a8;margin-bottom:6px;" id="detail_date"></div>
         <!-- Descrição scrollável -->
-        <div style="background:var(--surface-dim);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.7;max-height:220px;overflow-y:auto;overflow-x:hidden;white-space:pre-wrap;font-family:var(--font-mono);overscroll-behavior:contain;-webkit-overflow-scrolling:touch;" id="detail_descricao"></div>
+        <div style="background:var(--surface-dim);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;font-family:var(--font-mono);" id="detail_descricao"></div>
       </div>
     </div>
     <div class="modal-footer" id="detail_actions" style="flex-wrap:wrap;justify-content:flex-start;"></div>
@@ -467,7 +467,7 @@
 <div id="vagaFormModal" class="modal-overlay">
   <div class="modal-box modal-box-lg">
     <div class="modal-header"><h2 class="modal-title" id="vagaFormTitle">Nova Vaga</h2><button class="modal-close" onclick="closeModal('vagaFormModal')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <div class="form-group" style="margin-bottom:20px;">
         <label class="form-label">🔗 Preencher via URL LinkedIn</label>
         <div style="display:flex;gap:8px;">
@@ -511,7 +511,7 @@
 <!-- GROQ Progress Modal -->
 <div id="groqProgressModal" class="modal-overlay">
   <div class="modal-box modal-box-sm">
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <div class="groq-progress-content">
         <div class="groq-progress-spinner"></div>
         <div class="groq-progress-title">⚡ Gerando com GROQ</div>
@@ -521,28 +521,45 @@
   </div>
 </div>
 
-<!-- Prompt Modal (manual fallback) -->
 <div id="promptModal" class="modal-overlay">
   <div class="modal-box modal-box-lg">
-    <div class="modal-header"><h2 class="modal-title">Prompt para ChatGPT</h2><button class="modal-close" onclick="closeModal('promptModal')">✕</button></div>
+
+    <div class="modal-header">
+      <h2 class="modal-title">Prompt para ChatGPT</h2>
+      <button class="modal-close" onclick="closeModal('promptModal')">✕</button>
+    </div>
+
     <div class="modal-body">
+      <!-- Aviso de fallback (quando GROQ não está disponível) -->
       <div id="fallbackNotice"></div>
-      <p style="font-size:14px;color:#6b7589;margin-bottom:14px;">Copie este prompt e cole no ChatGPT para gerar seu currículo.</p>
+
+      <p style="font-size:14px;color:#6b7589;margin-bottom:14px;">
+        Copie este prompt e cole no ChatGPT para gerar seu currículo.
+      </p>
+
+      <!-- Output box — sem max-height nem overflow próprio.
+            O modal-body inteiro é quem rola. -->
       <div class="output-box">
         <div class="output-header">
           <span class="output-header-label">prompt completo</span>
           <button class="btn btn-secondary btn-sm" id="copyPromptBtn" onclick="VagasModule.copyPrompt()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
             Copiar
           </button>
         </div>
+        <!-- pre sem max-height — cresce com o conteúdo, modal-body rola -->
         <pre class="output-pre" id="promptContent"></pre>
       </div>
     </div>
+
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="VagasModule.advanceToJson()">Próxima Etapa →</button>
       <button class="btn btn-secondary" onclick="closeModal('promptModal')">Fechar</button>
     </div>
+
   </div>
 </div>
 
@@ -550,7 +567,7 @@
 <div id="jsonModal" class="modal-overlay">
   <div class="modal-box modal-box-lg">
     <div class="modal-header"><h2 class="modal-title" id="jsonModalTitle">Colar Resposta do ChatGPT</h2><button class="modal-close" onclick="closeModal('jsonModal')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <p style="font-size:14px;color:#6b7589;margin-bottom:12px;">Cole o JSON completo retornado pelo ChatGPT:</p>
       <textarea id="jsonInput" class="form-textarea" rows="18"
         style="overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;"
@@ -571,7 +588,7 @@
 <div id="resultModal" class="modal-overlay">
   <div class="modal-box modal-box-lg">
     <div class="modal-header"><h2 class="modal-title">Análise de Elegibilidade</h2><button class="modal-close" onclick="closeModal('resultModal')">✕</button></div>
-    <div class="modal-body"><div id="result_eligibility"></div></div>
+    <div class="modal-body" tabindex="-1"><div id="result_eligibility"></div></div>
     <div class="modal-footer">
       <button class="btn btn-success" onclick="VagasModule.viewResume()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -595,7 +612,7 @@
         <button class="modal-close" onclick="closeModal('vizModal');document.getElementById('resumeIframe').src=''">✕</button>
       </div>
     </div>
-    <div class="modal-body"><iframe id="resumeIframe" title="Currículo"></iframe></div>
+    <div class="modal-body" tabindex="-1"><iframe id="resumeIframe" title="Currículo"></iframe></div>
   </div>
 </div>
 
@@ -609,7 +626,7 @@
       </div>
       <button class="modal-close" onclick="closeModal('suggestChangeModal')">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <p style="font-size:14px;color:#6b7589;margin-bottom:16px;">Descreva o que deseja alterar no currículo. Seja específico — a IA aplicará apenas o que você solicitar.</p>
       <div class="form-group" style="margin-bottom:16px;">
         <label class="form-label">O que deseja alterar?</label>
@@ -655,7 +672,7 @@
 <div id="expModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header"><h2 class="modal-title" id="expModalTitle">Nova Experiência</h2><button class="modal-close" onclick="closeModal('expModal')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <div class="form-grid" style="margin-bottom:12px;">
         <div class="form-group"><label class="form-label">Cargo / Função *</label><input type="text" id="exp_role" class="form-input" placeholder="Desenvolvedor Backend Sênior"></div>
         <div class="form-group"><label class="form-label">Empresa *</label><input type="text" id="exp_company" class="form-input" placeholder="Nome da empresa"></div>
@@ -687,7 +704,7 @@
 <div id="eduModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header"><h2 class="modal-title" id="eduModalTitle">Nova Formação</h2><button class="modal-close" onclick="closeModal('eduModal')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <div class="form-grid" style="margin-bottom:12px;">
         <div class="form-group"><label class="form-label">Curso / Grau *</label><input type="text" id="edu_degree" class="form-input" placeholder="Bacharelado em Ciência da Computação"></div>
         <div class="form-group"><label class="form-label">Instituição *</label><input type="text" id="edu_institution" class="form-input" placeholder="Nome da instituição"></div>
@@ -713,7 +730,7 @@
 <div id="certModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header"><h2 class="modal-title" id="certModalTitle">Nova Certificação</h2><button class="modal-close" onclick="closeModal('certModal')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Nome da Certificação *</label><input type="text" id="cert_name" class="form-input" placeholder="AWS Solutions Architect"></div>
         <div class="form-group"><label class="form-label">Emissor *</label><input type="text" id="cert_issuer" class="form-input" placeholder="Amazon Web Services"></div>
@@ -733,7 +750,7 @@
 <div id="langModal" class="modal-overlay">
   <div class="modal-box modal-box-sm">
     <div class="modal-header"><h2 class="modal-title" id="langModalTitle">Novo Idioma</h2><button class="modal-close" onclick="closeModal('langModal')">✕</button></div>
-    <div class="modal-body">
+    <div class="modal-body" tabindex="-1">
       <div class="form-group" style="margin-bottom:12px;"><label class="form-label">Idioma *</label><input type="text" id="lang_language" class="form-input" placeholder="Inglês"></div>
       <div class="form-group">
         <label class="form-label">Proficiência</label>

@@ -1,0 +1,48 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     modal-vaga-detail.html
+     Cole este bloco no index.html onde estava o vagaDetailModal
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+     <div id="vagaDetailModal" class="modal-overlay">
+      <div class="modal-box modal-box-lg">
+    
+        <div class="modal-header">
+          <div style="min-width:0;flex:1;">
+            <h2 class="modal-title" id="detail_cargo" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></h2>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
+              <span style="font-size:14px;color:#6b7589;" id="detail_empresa"></span>
+              <span class="badge" id="detail_status"></span>
+            </div>
+          </div>
+          <button class="modal-close" onclick="closeModal('vagaDetailModal')">✕</button>
+        </div>
+    
+        <div class="modal-body">
+          <!-- Elegibilidade (visível só se tiver currículo gerado) -->
+          <div id="detail_eligibility_section" style="display:none;"></div>
+    
+          <!-- Meta da vaga -->
+          <div style="font-size:12px;color:#8b92a8;margin-bottom:10px;" id="detail_date"></div>
+    
+          <!-- Descrição da vaga — div simples, sem altura fixa nem scroll próprio.
+               O modal-body inteiro é quem rola. -->
+          <div
+            id="detail_descricao"
+            style="
+              background: var(--surface-dim);
+              border: 1px solid var(--border);
+              border-radius: var(--radius-sm);
+              padding: 14px;
+              font-size: 13px;
+              line-height: 1.7;
+              white-space: pre-wrap;
+              word-break: break-word;
+              font-family: var(--font-mono);
+            "
+          ></div>
+        </div>
+    
+        <div class="modal-footer" id="detail_actions" style="justify-content:flex-start;flex-wrap:wrap;"></div>
+    
+      </div>
+    </div>
