@@ -4,3 +4,4 @@ TODO.txt
 backup-migracao-**.json
 migrate.py
 **.env
+nde_modules
