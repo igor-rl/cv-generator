@@ -1,6 +1,6 @@
 /**
  * settings.js — App configuration (GROQ API key, enable toggle, backup)
- * Now consolidates GROQ config + Backup into a single tabbed page.
+ * Backup agora é JSON puro com merge inteligente por updatedAt.
  */
 
 window.SettingsModule = (() => {
@@ -24,10 +24,8 @@ window.SettingsModule = (() => {
     const groqModelEl = document.getElementById('cfg_groq_model');
     if (groqModelEl) groqModelEl.value = cfg.groq_model || 'llama-3.3-70b-versatile';
 
-    // Load the enable toggle — defaults to true if key exists, false otherwise
     const enableEl = document.getElementById('cfg_groq_enabled');
     if (enableEl) {
-      // groq_enabled defaults to true if the key is set, false if not
       const defaultEnabled = !!(cfg.groq_key && cfg.groq_key.startsWith('gsk_'));
       enableEl.checked = cfg.groq_enabled !== undefined ? cfg.groq_enabled : defaultEnabled;
     }
@@ -39,8 +37,8 @@ window.SettingsModule = (() => {
     const statusEl = document.getElementById('groq-status-indicator');
     if (!statusEl) return;
 
-    const hasKey = !!(key && key.startsWith('gsk_') && key.length > 20);
-    const isEnabled = enabled !== false; // defaults to true
+    const hasKey    = !!(key && key.startsWith('gsk_') && key.length > 20);
+    const isEnabled = enabled !== false;
 
     if (hasKey && isEnabled) {
       statusEl.className = 'groq-status groq-active';
@@ -104,50 +102,65 @@ window.SettingsModule = (() => {
     el.type = el.type === 'password' ? 'text' : 'password';
   }
 
-  // ── Backup functions (merged from backup.js) ──────────────────────────────
+  // ── Export Backup (JSON puro) ──────────────────────────────────────────────
   async function exportBackup() {
     const btn = document.getElementById('btn-export');
     if (btn) { btn.disabled = true; btn.textContent = 'Exportando…'; }
 
     try {
-      const backup  = await DB.exportBackup();
-      const cvxData = await CVX.encode(backup);
+      const backup = await DB.exportBackup();
+      const json   = JSON.stringify(backup, null, 2);
 
-      const blob = new Blob([cvxData], { type: 'application/octet-stream' });
+      const blob = new Blob([json], { type: 'application/json' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = `curriculos-${new Date().toISOString().split('T')[0]}.cvx`;
+      a.download = `curriculos-backup-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
       App.showStatus('settings-status', 'success',
-        `✓ Backup exportado! (${backup.vagas?.length||0} vagas, ${backup.curriculos?.length||0} currículos)`);
+        `✓ Backup exportado! (${backup.vagas?.length||0} vagas, ${backup.curriculos?.length||0} currículos, ${backup.experiences?.length||0} experiências)`);
     } catch (err) {
       console.error('[Backup Export Error]', err);
       App.showStatus('settings-status', 'error', 'Erro ao exportar: ' + err.message);
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Exportar .cvx'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Exportar .json'; }
     }
   }
 
+  // ── Import Backup com merge inteligente ────────────────────────────────────
   async function importBackup(event) {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const btn = document.getElementById('btn-import-label');
+
     try {
       const text   = await file.text();
-      const backup = await CVX.decode(text);
+      const backup = JSON.parse(text);
 
       if (!backup.version) throw new Error('Arquivo inválido ou sem versão');
 
-      await DB.importBackup(backup);
+      const stats = await DB.importBackup(backup);
+
+      const summary = [
+        stats.vagas.added + stats.vagas.updated > 0
+          ? `${stats.vagas.added} vagas novas, ${stats.vagas.updated} atualizadas`
+          : null,
+        stats.experiences.added + stats.experiences.updated > 0
+          ? `${stats.experiences.added} exp. novas, ${stats.experiences.updated} atualizadas`
+          : null,
+        stats.curriculos.added + stats.curriculos.updated > 0
+          ? `${stats.curriculos.added} currículos novos, ${stats.curriculos.updated} atualizados`
+          : null,
+      ].filter(Boolean).join(' · ');
 
       App.showStatus('settings-status', 'success',
-        `✓ Backup importado! (${backup.vagas?.length||0} vagas, ${backup.curriculos?.length||0} currículos). Recarregando…`);
-      setTimeout(() => location.reload(), 1800);
+        `✓ Merge concluído! ${summary || 'Nenhuma alteração necessária — dados locais já são os mais recentes.'} Recarregando…`);
+      setTimeout(() => location.reload(), 2500);
     } catch (err) {
       console.error('[Backup Import Error]', err);
       App.showStatus('settings-status', 'error', 'Erro ao importar: ' + err.message);

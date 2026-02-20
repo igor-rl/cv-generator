@@ -1,23 +1,24 @@
 /**
- * app.js — Application shell: navigation, routing, utilities
+ * app.js — Application shell: navigation, routing, utilities, SW update handling
  */
 
 const App = (() => {
-  // ── State ───────────────────────────────────────────────────────────────
   let currentPage = 'home';
 
-  // ── Init ────────────────────────────────────────────────────────────────
+  // ── Init ────────────────────────────────────────────────────────────────────
   function init() {
     setupNavigation();
     setupCookieBanner();
     handleInstallPrompt();
     registerSW();
-    navigateTo('home');
+
+    // Router determina a página inicial pela URL
+    const initialPage = Router.init();
+    navigateTo(initialPage, { updateUrl: false });
   }
 
-  // ── Navigation ───────────────────────────────────────────────────────────
+  // ── Navigation ───────────────────────────────────────────────────────────────
   function setupNavigation() {
-    // Sidebar + mobile nav items
     document.querySelectorAll('[data-nav]').forEach(el => {
       el.addEventListener('click', () => {
         const target = el.dataset.nav;
@@ -30,31 +31,33 @@ const App = (() => {
     });
   }
 
-  function navigateTo(page) {
+  function navigateTo(page, { updateUrl = true } = {}) {
     currentPage = page;
 
-    // Update active states — sidebar + mobile nav
     document.querySelectorAll('[data-nav]').forEach(el => {
       el.classList.toggle('active', el.dataset.nav === page);
     });
 
-    // Show/hide pages
     document.querySelectorAll('.page').forEach(p => {
       p.classList.toggle('active', p.id === `page-${page}`);
     });
 
-    // Load page data
-    switch (page) {
-      case 'vagas':    window.VagasModule?.load();   break;
-      case 'profile':  window.ProfileModule?.load(); break;
-      case 'exp':      window.HistoryModule?.loadExperiences(); break;
-      case 'edu':      window.HistoryModule?.loadEducation();   break;
-      case 'certs':    window.HistoryModule?.loadCertifications(); break;
-      case 'langs':    window.HistoryModule?.loadLanguages();    break;
-      case 'settings': window.SettingsModule?.load(); break;
+    // Atualiza a URL via router (apenas quando não vem do popstate)
+    if (updateUrl && window.Router) {
+      Router.navigate(page, { replace: false });
     }
 
-    // Close any mobile modal
+    // Carrega dados da página
+    switch (page) {
+      case 'vagas':    window.VagasModule?.load();               break;
+      case 'profile':  window.ProfileModule?.load();             break;
+      case 'exp':      window.HistoryModule?.loadExperiences();  break;
+      case 'edu':      window.HistoryModule?.loadEducation();    break;
+      case 'certs':    window.HistoryModule?.loadCertifications(); break;
+      case 'langs':    window.HistoryModule?.loadLanguages();    break;
+      case 'settings': window.SettingsModule?.load();            break;
+    }
+
     document.getElementById('historyTypeModal')?.classList.remove('open');
   }
 
@@ -62,7 +65,7 @@ const App = (() => {
     document.getElementById('historyTypeModal').classList.add('open');
   }
 
-  // ── Cookie Banner ─────────────────────────────────────────────────────────
+  // ── Cookie Banner ─────────────────────────────────────────────────────────────
   function setupCookieBanner() {
     if (!localStorage.getItem('cookies_accepted')) {
       const banner = document.getElementById('cookieBanner');
@@ -76,7 +79,7 @@ const App = (() => {
     if (banner) banner.classList.remove('show');
   }
 
-  // ── PWA Install ───────────────────────────────────────────────────────────
+  // ── PWA Install ───────────────────────────────────────────────────────────────
   let deferredInstallPrompt = null;
 
   function handleInstallPrompt() {
@@ -105,27 +108,50 @@ const App = (() => {
     deferredInstallPrompt = null;
   }
 
-  // ── SW ────────────────────────────────────────────────────────────────────
+  // ── Service Worker ────────────────────────────────────────────────────────────
   function registerSW() {
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW:', reg.scope))
-          .catch(err => console.warn('SW failed:', err));
-      });
-    }
+    if (!('serviceWorker' in navigator)) return;
+
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        console.log('[App] SW registrado:', reg.scope);
+
+        // Ouve mensagens do SW
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          const msg = event.data;
+          if (!msg) return;
+
+          if (msg.type === 'SW_UPDATED') {
+            console.log('[App] SW atualizado para versão:', msg.version);
+            if (msg.reload) {
+              // Recarrega automaticamente para garantir versão nova
+              // Pequeno delay para o SW terminar de ativar
+              setTimeout(() => {
+                window.location.reload();
+              }, 500);
+            }
+          }
+        });
+
+        // Verifica atualizações periodicamente
+        setInterval(() => reg.update(), 60 * 1000); // a cada 1 minuto
+
+      } catch (err) {
+        console.warn('[App] SW falhou:', err);
+      }
+    });
   }
 
-  // ── Modal helpers ─────────────────────────────────────────────────────────
+  // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openModal(id) {
     const el = document.getElementById(id);
     if (el) {
       el.classList.add('open');
-      // Prevent background page scrolling while modal is open
       document.body.style.overflow = 'hidden';
-      el.addEventListener('click', (e) => {
-        if (e.target === el) closeModal(id);
-      }, { once: true });
+      // Fecha ao clicar no overlay
+      const close = (e) => { if (e.target === el) closeModal(id); };
+      el.addEventListener('click', close, { once: true });
     }
   }
 
@@ -133,26 +159,23 @@ const App = (() => {
     const el = document.getElementById(id);
     if (el) {
       el.classList.remove('open');
-      // Restore scrolling only if no other modals are open
       const anyOpen = document.querySelector('.modal-overlay.open');
       if (!anyOpen) document.body.style.overflow = '';
     }
   }
 
-  // ── Status messages ───────────────────────────────────────────────────────
+  // ── Status messages ───────────────────────────────────────────────────────────
   function showStatus(elementId, type, message, duration = 5000) {
     const el = document.getElementById(elementId);
     if (!el) return;
     el.textContent = message;
     el.className = `status-msg show ${type}`;
     if (duration) {
-      setTimeout(() => {
-        el.classList.remove('show');
-      }, duration);
+      setTimeout(() => el.classList.remove('show'), duration);
     }
   }
 
-  // ── Confirm dialog ────────────────────────────────────────────────────────
+  // ── Confirm dialog ────────────────────────────────────────────────────────────
   function confirm(title, message, onConfirm) {
     document.getElementById('confirmTitle').textContent   = title;
     document.getElementById('confirmMessage').textContent = message;
@@ -163,7 +186,7 @@ const App = (() => {
     openModal('confirmModal');
   }
 
-  // ── Escape HTML ───────────────────────────────────────────────────────────
+  // ── Utilities ─────────────────────────────────────────────────────────────────
   function esc(str) {
     return String(str ?? '')
       .replace(/&/g,'&amp;')
@@ -172,7 +195,6 @@ const App = (() => {
       .replace(/"/g,'&quot;');
   }
 
-  // ── Format date ───────────────────────────────────────────────────────────
   function formatDate(iso) {
     if (!iso) return '';
     return new Date(iso).toLocaleDateString('pt-BR', {
@@ -204,11 +226,11 @@ const App = (() => {
   };
 })();
 
-// ── Global wrappers for onclick attributes ────────────────────────────────────
-function navigateTo(page)               { App.navigateTo(page); }
-function openModal(id)                  { App.openModal(id); }
-function closeModal(id)                 { App.closeModal(id); }
-function acceptCookies()                { App.acceptCookies(); }
-function instalarApp()                  { App.installApp(); }
+// ── Global wrappers para atributos onclick no HTML ────────────────────────────
+function navigateTo(page)   { App.navigateTo(page); }
+function openModal(id)      { App.openModal(id); }
+function closeModal(id)     { App.closeModal(id); }
+function acceptCookies()    { App.acceptCookies(); }
+function instalarApp()      { App.installApp(); }
 
 document.addEventListener('DOMContentLoaded', () => App.init());

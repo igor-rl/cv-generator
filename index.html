@@ -33,7 +33,7 @@
 
 <div class="app-layout">
 
-  <!-- SIDEBAR -->
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
   <nav class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-mark">
@@ -43,6 +43,8 @@
     </div>
 
     <div class="sidebar-nav">
+
+      <!-- Início -->
       <div class="nav-section">
         <div class="nav-item active" data-nav="home">
           <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
@@ -50,6 +52,15 @@
         </div>
       </div>
 
+      <!-- Vagas — logo após Início no desktop -->
+      <div class="nav-section">
+        <div class="nav-item" data-nav="vagas">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+          <span class="nav-label">Minhas Vagas</span>
+        </div>
+      </div>
+
+      <!-- Perfil -->
       <div class="nav-section">
         <div class="nav-section-label">Meu perfil</div>
         <div class="nav-item" data-nav="profile">
@@ -74,14 +85,7 @@
         </div>
       </div>
 
-      <div class="nav-section">
-        <div class="nav-section-label">Vagas</div>
-        <div class="nav-item" data-nav="vagas">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-          <span class="nav-label">Minhas Vagas</span>
-        </div>
-      </div>
-
+      <!-- Sistema -->
       <div class="nav-section">
         <div class="nav-section-label">Sistema</div>
         <div class="nav-item" data-nav="settings">
@@ -94,14 +98,14 @@
     <div class="sidebar-footer">
       <div class="sidebar-credit">
         <a href="https://igorlage.vercel.app" target="_blank" rel="noopener">by igorlage</a>
-        <span class="app-version" id="appVersion">v4.1.0</span>
+        <span class="app-version" id="appVersion">v5.0.0</span>
       </div>
     </div>
   </nav>
 
   <main class="main-content">
 
-    <!-- HOME -->
+    <!-- ═══ HOME ══════════════════════════════════════════════════════════════ -->
     <section class="page active" id="page-home">
       <div class="home-hero">
         <h1>Currículos <em>estratégicos</em><br>feitos com IA.</h1>
@@ -139,12 +143,12 @@
       <div class="home-tip">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         <div>
-          <strong>Dados 100% locais</strong> via IndexedDB e criptografados no dispositivo. Backups em formato <strong>.cvx</strong> — privado e seguro.
+          <strong>Dados 100% locais</strong> via IndexedDB e criptografados no dispositivo. Backups em formato <strong>.json</strong> com merge inteligente — o dado mais recente sempre vence.
         </div>
       </div>
     </section>
 
-    <!-- PROFILE -->
+    <!-- ═══ PROFILE ════════════════════════════════════════════════════════════ -->
     <section class="page" id="page-profile">
       <div class="page-header page-header-row">
         <div><h1 class="page-title">Dados Pessoais</h1><p class="page-subtitle">Informações exibidas no cabeçalho do currículo</p></div>
@@ -189,7 +193,7 @@
       <div id="profile-status" class="status-msg"></div>
     </section>
 
-    <!-- EXPERIENCES -->
+    <!-- ═══ EXPERIENCES ════════════════════════════════════════════════════════ -->
     <section class="page" id="page-exp">
       <div class="page-header page-header-row">
         <div><h1 class="page-title">Experiências</h1><p class="page-subtitle">Histórico profissional ordenado por data</p></div>
@@ -198,7 +202,7 @@
       <div id="exp-list"></div>
     </section>
 
-    <!-- EDUCATION -->
+    <!-- ═══ EDUCATION ══════════════════════════════════════════════════════════ -->
     <section class="page" id="page-edu">
       <div class="page-header page-header-row">
         <div><h1 class="page-title">Formação Acadêmica</h1><p class="page-subtitle">Cursos, graduação, bootcamps</p></div>
@@ -207,7 +211,7 @@
       <div id="edu-list"></div>
     </section>
 
-    <!-- CERTIFICATIONS -->
+    <!-- ═══ CERTIFICATIONS ═════════════════════════════════════════════════════ -->
     <section class="page" id="page-certs">
       <div class="page-header page-header-row">
         <div><h1 class="page-title">Certificações</h1><p class="page-subtitle">Certificados e credenciais profissionais</p></div>
@@ -216,7 +220,7 @@
       <div id="certs-list"></div>
     </section>
 
-    <!-- LANGUAGES -->
+    <!-- ═══ LANGUAGES ══════════════════════════════════════════════════════════ -->
     <section class="page" id="page-langs">
       <div class="page-header page-header-row">
         <div><h1 class="page-title">Idiomas</h1><p class="page-subtitle">Línguas e nível de proficiência</p></div>
@@ -225,7 +229,7 @@
       <div id="langs-list"></div>
     </section>
 
-    <!-- VAGAS -->
+    <!-- ═══ VAGAS ══════════════════════════════════════════════════════════════ -->
     <section class="page" id="page-vagas">
       <div class="page-header page-header-row">
         <div><h1 class="page-title">Minhas Vagas</h1><p class="page-subtitle"><span id="vagasCounter">0 vagas</span></p></div>
@@ -256,14 +260,14 @@
       <div id="vagasPagination" class="pagination"></div>
     </section>
 
-    <!-- ═══ SETTINGS (merged: GROQ + Backup) ═══ -->
+    <!-- ═══ SETTINGS ══════════════════════════════════════════════════════════
+         NOTA: Botão "Salvar" REMOVIDO do topo. Salvar está apenas dentro das
+         seções relevantes (GROQ card) para evitar confusão.
+    ═══════════════════════════════════════════════════════════════════════════ -->
     <section class="page" id="page-settings">
-      <div class="page-header page-header-row">
-        <div><h1 class="page-title">Configurações</h1><p class="page-subtitle">GROQ, backup e preferências</p></div>
-        <button class="btn btn-primary" onclick="SettingsModule.save()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-          Salvar
-        </button>
+      <div class="page-header">
+        <h1 class="page-title">Configurações</h1>
+        <p class="page-subtitle">GROQ, backup e preferências</p>
       </div>
 
       <!-- Tab switcher -->
@@ -340,31 +344,40 @@
           <div class="backup-card">
             <div class="backup-card-icon">⬇️</div>
             <h3>Exportar Backup</h3>
-            <p>Baixe todos os seus dados em formato <strong>.cvx</strong> — criptografado e privado. Ideal para backup antes de trocar de dispositivo.</p>
+            <p>Baixe todos os seus dados em formato <strong>.json</strong>. Ideal para backup antes de trocar de dispositivo ou sincronizar entre dispositivos.</p>
             <button id="btn-export" class="btn btn-primary" onclick="SettingsModule.exportBackup()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar .cvx
+              Exportar .json
             </button>
           </div>
 
           <div class="backup-card">
             <div class="backup-card-icon">⬆️</div>
             <h3>Importar Backup</h3>
-            <p>Restaure um arquivo <strong>.cvx</strong> previamente exportado. Os dados existentes serão mesclados.</p>
+            <p>Restaure um arquivo <strong>.json</strong> previamente exportado. Merge inteligente: o dado com data de edição mais recente sempre vence.</p>
             <label class="btn btn-secondary" style="cursor:pointer;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Importar .cvx
-              <input type="file" accept=".cvx,.json" style="display:none" onchange="SettingsModule.importBackup(event)">
+              Importar .json
+              <input type="file" accept=".json" style="display:none" onchange="SettingsModule.importBackup(event)">
             </label>
           </div>
         </div>
 
         <div class="card">
+          <div class="card-title">🔄 Merge inteligente de dados</div>
+          <p style="font-size:14px;color:#6b7589;line-height:1.7;">
+            Ao importar um backup, os dados são <strong>mesclados com os dados locais</strong> — não substituídos.<br><br>
+            Para cada item importado: se não existe localmente, é adicionado. Se já existe,
+            a versão com a <strong>data de edição mais recente</strong> é mantida. Dados locais mais recentes são preservados.
+          </p>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
           <div class="card-title">🔐 Segurança dos dados</div>
           <p style="font-size:14px;color:#6b7589;line-height:1.7;">
-            Seus dados pessoais são <strong>criptografados com AES-GCM</strong> antes de serem salvos no IndexedDB.
-            O arquivo de backup <strong>.cvx</strong> também é criptografado — não é legível por humanos nem por terceiros sem a chave do dispositivo.<br><br>
-            O backup contém: dados pessoais, experiências, formação, certificações, idiomas, vagas e currículos.
+            Dados pessoais são <strong>criptografados com AES-GCM</strong> no IndexedDB.
+            O arquivo de backup <strong>.json</strong> é legível — guarde-o com cuidado.
+            Nenhuma informação é enviada para servidores externos.
           </p>
         </div>
       </div>
@@ -376,6 +389,7 @@
 </div>
 
 <!-- ── Mobile Bottom Nav ─────────────────────────────────────────────────── -->
+<!-- MOBILE: mantém ordem original (Início, Perfil, Vagas, Histórico, Config) -->
 <nav class="mobile-nav">
   <div class="mobile-nav-items">
     <div class="mobile-nav-item active" data-nav="home">
@@ -441,8 +455,8 @@
       <div id="detail_eligibility_section" style="display:none;"></div>
       <div style="margin-bottom:16px;">
         <div style="font-size:12px;color:#8b92a8;margin-bottom:6px;" id="detail_date"></div>
-        <!-- Description box: fixed max-height, scrollable internally -->
-        <div style="background:var(--surface-dim);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.7;max-height:200px;overflow-y:auto;white-space:pre-wrap;font-family:var(--font-mono);overscroll-behavior:contain;" id="detail_descricao"></div>
+        <!-- Descrição scrollável -->
+        <div style="background:var(--surface-dim);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.7;max-height:220px;overflow-y:auto;overflow-x:hidden;white-space:pre-wrap;font-family:var(--font-mono);overscroll-behavior:contain;-webkit-overflow-scrolling:touch;" id="detail_descricao"></div>
       </div>
     </div>
     <div class="modal-footer" id="detail_actions" style="flex-wrap:wrap;justify-content:flex-start;"></div>
@@ -480,7 +494,10 @@
       </div>
       <div class="form-group">
         <label class="form-label">Descrição da Vaga *</label>
-        <textarea id="v_descricao" class="form-textarea" rows="12" placeholder="Cole aqui a descrição completa da vaga"></textarea>
+        <!-- textarea com scroll explícito -->
+        <textarea id="v_descricao" class="form-textarea" rows="12"
+          style="overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;"
+          placeholder="Cole aqui a descrição completa da vaga"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -535,7 +552,9 @@
     <div class="modal-header"><h2 class="modal-title" id="jsonModalTitle">Colar Resposta do ChatGPT</h2><button class="modal-close" onclick="closeModal('jsonModal')">✕</button></div>
     <div class="modal-body">
       <p style="font-size:14px;color:#6b7589;margin-bottom:12px;">Cole o JSON completo retornado pelo ChatGPT:</p>
-      <textarea id="jsonInput" class="form-textarea" rows="18" placeholder='{ "versao": "1.0.0", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
+      <textarea id="jsonInput" class="form-textarea" rows="18"
+        style="overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;"
+        placeholder='{ "versao": "1.0.0", "elegibilidade": {...}, "curriculo": {...} }'></textarea>
     </div>
     <div class="modal-footer">
       <button class="btn btn-success btn-lg" onclick="VagasModule.saveJson()">
@@ -595,10 +614,11 @@
       <div class="form-group" style="margin-bottom:16px;">
         <label class="form-label">O que deseja alterar?</label>
         <textarea id="suggestChangeInput" class="form-textarea" rows="4"
+          style="overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;"
           placeholder="Ex: Adicione o curso 'Node.js Avançado' pela Rocketseat em 2023 nas certificações.&#10;Ex: Remova a experiência mais antiga (anterior a 2018).&#10;Ex: Ajuste o resumo profissional para enfatizar mais a liderança de times."></textarea>
       </div>
 
-      <!-- Manual section (shown when GROQ is unavailable) -->
+      <!-- Manual section -->
       <div id="suggest-manual-section" class="suggest-manual-section">
         <p style="font-size:13px;color:#6b7589;margin-bottom:10px;">Cole este prompt no ChatGPT e depois cole o JSON retornado abaixo:</p>
         <div class="output-box" style="margin-bottom:12px;">
@@ -606,11 +626,13 @@
             <span class="output-header-label">prompt de alteração</span>
             <button id="btn-copy-suggest" class="btn btn-secondary btn-sm" onclick="VagasModule.copySuggestPrompt()">Copiar</button>
           </div>
-          <pre class="output-pre" id="suggestChangeJson" style="max-height:200px;"></pre>
+          <pre class="output-pre" id="suggestChangeJson" style="max-height:200px;overflow-y:auto;"></pre>
         </div>
         <div class="form-group">
           <label class="form-label">Cole o JSON retornado pelo ChatGPT:</label>
-          <textarea id="suggestJsonResult" class="form-textarea" rows="8" placeholder='{ "versao": "1.0.0", ... }'></textarea>
+          <textarea id="suggestJsonResult" class="form-textarea" rows="8"
+            style="overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;"
+            placeholder='{ "versao": "1.0.0", ... }'></textarea>
         </div>
         <div style="margin-top:10px;">
           <button class="btn btn-success" onclick="VagasModule.saveSuggestJson()">Aplicar JSON</button>
@@ -648,7 +670,9 @@
       </div>
       <div class="form-group">
         <label class="form-label">Descrição, responsabilidades e resultados</label>
-        <textarea id="exp_description" class="form-textarea" rows="8" placeholder="Descreva suas responsabilidades, tecnologias e resultados (métricas, impactos)..."></textarea>
+        <textarea id="exp_description" class="form-textarea" rows="8"
+          style="overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;"
+          placeholder="Descreva suas responsabilidades, tecnologias e resultados (métricas, impactos)..."></textarea>
       </div>
       <div id="exp-modal-status" class="status-msg" style="margin-top:8px;"></div>
     </div>
@@ -672,7 +696,9 @@
       </div>
       <div class="form-group">
         <label class="form-label">Observações</label>
-        <textarea id="edu_notes" class="form-textarea" rows="3" placeholder="Ex: Foco em engenharia de software..."></textarea>
+        <textarea id="edu_notes" class="form-textarea" rows="3"
+          style="overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;"
+          placeholder="Ex: Foco em engenharia de software..."></textarea>
       </div>
       <div id="edu-modal-status" class="status-msg" style="margin-top:8px;"></div>
     </div>
@@ -758,9 +784,10 @@
   </div>
 </div>
 
-<!-- Scripts — order matters: db first, then groq, then rest -->
+<!-- ── Scripts — ordem importa ────────────────────────────────────────────── -->
 <script src="assets/js/db.js"></script>
 <script src="assets/js/groq.js"></script>
+<script src="assets/js/router.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/profile.js"></script>
 <script src="assets/js/history.js"></script>

@@ -1,29 +1,38 @@
 /**
- * sw.js — Service Worker v5
+ * sw.js — Service Worker v6
  *
  * ESTRATÉGIA DE ATUALIZAÇÃO:
- * - CACHE_VERSION é gerado em build time (ver generate-version.js) ou manualmente
- * - Ao detectar novo SW, força skipWaiting e clients.claim imediatamente
- * - Usa "network first" para arquivos HTML/JS/CSS para garantir frescor
- * - Usa "cache first" apenas para fontes e imagens externas
+ * - CACHE_VERSION é gerado automaticamente via timestamp no build
+ * - Ao detectar novo SW: skipWaiting imediato + clients.claim + reload de todos os clientes
+ * - Network First para tudo — garante sempre a versão mais recente
+ * - Cache serve apenas de fallback offline
  *
- * PARA DESENVOLVEDORES: bump CACHE_VERSION a cada deploy.
- * O formato recomendado é um timestamp ou hash gerado automaticamente.
+ * PROBLEMA RESOLVIDO: versão antiga ficava servida mesmo após mudanças.
+ * SOLUÇÃO: Network First + reload automático ao ativar novo SW.
  */
 
 // ─── BUMP ESTE VALOR A CADA DEPLOY ────────────────────────────────────────────
 const CACHE_VERSION = '__CACHE_VERSION__'; // substituído pelo generate-version.js
 // ──────────────────────────────────────────────────────────────────────────────
 
-const CACHE_NAME    = `curriculos-v${CACHE_VERSION}`;
-const OFFLINE_PAGE  = '/index.html';
+const CACHE_NAME   = `curriculos-v${CACHE_VERSION}`;
+const OFFLINE_PAGE = '/index.html';
 
-// Assets que queremos pré-cachear (shell do app)
 const SHELL_ASSETS = [
   '/',
   '/index.html',
   '/resume.html',
   '/manifest.json',
+  '/views/sidebar.html',
+  '/views/modals.html',
+  '/views/pages/home.html',
+  '/views/pages/profile.html',
+  '/views/pages/exp.html',
+  '/views/pages/edu.html',
+  '/views/pages/certs.html',
+  '/views/pages/langs.html',
+  '/views/pages/vagas.html',
+  '/views/pages/settings.html',
   '/assets/css/base.css',
   '/assets/css/layout.css',
   '/assets/css/components.css',
@@ -31,6 +40,7 @@ const SHELL_ASSETS = [
   '/assets/css/pages.css',
   '/assets/js/db.js',
   '/assets/js/app.js',
+  '/assets/js/router.js',
   '/assets/js/groq.js',
   '/assets/js/profile.js',
   '/assets/js/history.js',
@@ -40,21 +50,27 @@ const SHELL_ASSETS = [
   '/core/prompts/change-prompt.md',
 ];
 
-// ── Install: pré-cache do shell ───────────────────────────────────────────────
+// ── Install ───────────────────────────────────────────────────────────────────
 self.addEventListener('install', (e) => {
   console.log('[SW] Installing version:', CACHE_VERSION);
   e.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(SHELL_ASSETS))
+      .then(cache => {
+        // Tenta cachear tudo, mas não falha se algum asset não existir
+        return Promise.allSettled(
+          SHELL_ASSETS.map(url =>
+            cache.add(url).catch(err => console.warn('[SW] Falha ao cachear:', url, err))
+          )
+        );
+      })
       .then(() => {
-        console.log('[SW] Shell cached, forcing activation');
-        // Força ativação imediata sem esperar tabs fecharem
-        return self.skipWaiting();
+        console.log('[SW] Installed, forcing activation immediately');
+        return self.skipWaiting(); // Ativa imediatamente sem esperar tabs fecharem
       })
   );
 });
 
-// ── Activate: limpa caches antigos e toma controle ───────────────────────────
+// ── Activate ──────────────────────────────────────────────────────────────────
 self.addEventListener('activate', (e) => {
   console.log('[SW] Activating version:', CACHE_VERSION);
   e.waitUntil(
@@ -63,91 +79,73 @@ self.addEventListener('activate', (e) => {
         const deleteOld = keys
           .filter(k => k !== CACHE_NAME)
           .map(k => {
-            console.log('[SW] Deleting old cache:', k);
+            console.log('[SW] Deletando cache antigo:', k);
             return caches.delete(k);
           });
         return Promise.all(deleteOld);
       })
-      .then(() => {
-        console.log('[SW] Claiming all clients');
-        // Toma controle de todas as tabs abertas imediatamente
-        return self.clients.claim();
-      })
-      .then(() => {
-        // Notifica todos os clientes para recarregar
-        return self.clients.matchAll({ type: 'window' });
-      })
+      .then(() => self.clients.claim()) // Toma controle de todas as tabs abertas
+      .then(() => self.clients.matchAll({ type: 'window' }))
       .then(clients => {
+        // Notifica TODOS os clientes para recarregar a página
+        // Isso resolve o problema de ver a versão antiga após deploy
         clients.forEach(client => {
-          console.log('[SW] Notifying client to reload');
-          client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+          console.log('[SW] Solicitando reload do cliente:', client.url);
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: CACHE_VERSION,
+            reload: true,
+          });
         });
       })
   );
 });
 
-// ── Fetch: Network First para app shell, Cache First para fontes ──────────────
+// ── Fetch: Network First para tudo ───────────────────────────────────────────
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  // Ignora requests não-GET
   if (e.request.method !== 'GET') return;
-
-  // Ignora extensões do Chrome e APIs externas (GROQ, extrator de vagas)
   if (url.protocol === 'chrome-extension:') return;
   if (url.hostname === 'api.groq.com') return;
   if (url.hostname.includes('onrender.com')) return;
-
-  // Fontes do Google: Cache First (mudam raramente, economiza banda)
   if (url.hostname.includes('fonts.g')) {
     e.respondWith(cacheFirst(e.request));
     return;
   }
-
-  // Ícones e imagens locais: Cache First
   if (url.pathname.startsWith('/icons/')) {
     e.respondWith(cacheFirst(e.request));
     return;
   }
 
-  // Todo o resto (HTML, JS, CSS, prompts): Network First
-  // Garante que o usuário sempre veja a versão mais recente
+  // Network First para TODO o resto — garante sempre conteúdo atualizado
   e.respondWith(networkFirst(e.request));
 });
 
-// ── Estratégias de cache ──────────────────────────────────────────────────────
+// ── Estratégias ───────────────────────────────────────────────────────────────
 
 async function networkFirst(request) {
   try {
-    const networkResponse = await fetch(request);
-
-    // Atualiza o cache com a resposta fresca
+    const networkResponse = await fetch(request, { cache: 'no-cache' }); // força no-cache
     if (networkResponse.ok) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, networkResponse.clone());
     }
-
     return networkResponse;
-  } catch (err) {
-    // Offline: tenta servir do cache
+  } catch (_) {
     const cached = await caches.match(request);
     if (cached) return cached;
-
-    // Fallback para index.html em caso de navegação
     if (request.mode === 'navigate') {
       const offline = await caches.match(OFFLINE_PAGE);
       if (offline) return offline;
     }
-
-    // Sem cache e sem rede: erro
-    throw err;
+    throw new Error('Offline e sem cache para: ' + request.url);
   }
 }
 
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
-
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
@@ -164,5 +162,8 @@ async function cacheFirst(request) {
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (e.data?.type === 'CHECK_VERSION') {
+    e.source?.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
   }
 });

@@ -18,7 +18,6 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s;
-  /* CRÍTICO: overlay NÃO deve rolar */
   overflow: hidden;
   touch-action: none;
 }
@@ -37,8 +36,7 @@
   max-height: calc(90vh - var(--safe-top));
   display: flex;
   flex-direction: column;
-  /* overflow hidden mantém border-radius nos filhos */
-  overflow: hidden;
+  overflow: hidden; /* mantém border-radius; scroll é só no .modal-body */
   transform: scale(0.97) translateY(8px);
   transition: transform 0.2s ease;
 }
@@ -55,7 +53,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0; /* header nunca encolhe */
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -79,12 +77,11 @@
 /*
  * CRÍTICO: .modal-body é o ÚNICO elemento scrollável da modal.
  *
- * Regras necessárias:
- * - flex: 1          → ocupa o espaço restante entre header e footer
- * - min-height: 0    → SEM isso, flex children não encolhem (bug clássico)
- * - overflow-y: auto → scroll interno
- * - overscroll-behavior: contain → impede scroll bleeding para o fundo
- * - touch-action: pan-y → permite scroll vertical em iOS
+ * min-height: 0 → sem isso, flex children não encolhem (bug clássico do flex)
+ * overflow-y: auto → scroll interno do body da modal
+ * overscroll-behavior: contain → impede scroll bleeding para fundo da página
+ * touch-action: pan-y → scroll vertical em iOS dentro do modal-body
+ * -webkit-overflow-scrolling: touch → momentum scroll em iOS
  */
 .modal-body {
   padding: 24px;
@@ -95,6 +92,7 @@
   scrollbar-width: thin;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .modal-footer {
@@ -104,22 +102,37 @@
   gap: 10px;
   align-items: center;
   justify-content: flex-end;
-  flex-shrink: 0; /* footer nunca encolhe */
+  flex-shrink: 0;
   background: var(--surface-dim);
   flex-wrap: wrap;
 }
 
-/* ── Textareas dentro de modais: SEMPRE roláveis ────────────────────────── */
-/*
- * Textareas dentro de modais precisam de overflow-y: auto explícito
- * para rolar seu próprio conteúdo sem depender do scroll da modal-body.
- * O touch-action: pan-y é crítico para iOS.
+/* ── TEXTAREA DENTRO DE MODAIS — SCROLL GARANTIDO ────────────────────────────
+ *
+ * PROBLEMA: textareas dentro de modais não rolam em iOS/Safari e alguns Android.
+ *
+ * CAUSA: o touch-action: none no .modal-overlay bloqueia gestos de scroll,
+ * e o textarea não tem sua própria área de scroll reconhecida pelo browser.
+ *
+ * SOLUÇÃO:
+ * 1. overflow-y: auto → habilita scroll interno
+ * 2. touch-action: pan-y → informa ao browser que gestos verticais devem
+ *    ser tratados como scroll (não ignorados pelo overlay)
+ * 3. -webkit-overflow-scrolling: touch → scroll inercial em iOS (legado)
+ * 4. overscroll-behavior: contain → impede propagação do scroll para o modal-body
+ * 5. resize: vertical → permite redimensionar (opcional mas convencional)
+ *
+ * Estes estilos são aplicados a TODOS os textareas dentro de modais.
  */
-.modal-body .form-textarea {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+.modal-body .form-textarea,
+.modal-body textarea {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior: contain;
   resize: vertical;
+  /* Garante que o textarea não cresça além de uma altura razoável */
+  max-height: 400px;
 }
 
 /* ── Viz Modal (iframe de currículo) ─────────────────────────────────────── */
@@ -205,7 +218,7 @@
   .modal-overlay {
     padding: 0;
     align-items: flex-end;
-    touch-action: none;
+    touch-action: none; /* overlay bloqueia, mas filhos podem usar pan-y */
   }
 
   .modal-box {
@@ -216,9 +229,16 @@
 
   .modal-overlay.open .modal-box { transform: translateY(0); }
 
+  /* Em mobile, modal-body e textareas DEVEM usar pan-y */
   .modal-body {
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-body .form-textarea,
+  .modal-body textarea {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   .modal-footer .btn { width: auto; flex: 1; }

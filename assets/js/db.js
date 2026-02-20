@@ -1,19 +1,17 @@
 /**
- * db.js — IndexedDB persistence layer v4
+ * db.js — IndexedDB persistence layer v5
  * - Structured history (experiences, education, certifications, languages)
  * - AES-GCM encryption for personal data
- * - CVX export/import format (encrypted, compressed-ish)
+ * - Backup em JSON puro (sem formato CVX)
+ * - Merge inteligente por updatedAt: item mais recente sempre vence
  */
 
 const DB_NAME    = 'curriculos-estrategicos';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let _db = null;
 
 // ── Crypto helpers ────────────────────────────────────────────────────────────
-// Derives a stable AES-GCM key from a device fingerprint stored in localStorage.
-// Key never leaves the device — it's just obfuscation against casual inspection.
-
 const CRYPTO = (() => {
   const KEY_STORE = 'cvx_device_key';
   let _cachedKey = null;
@@ -44,7 +42,6 @@ const CRYPTO = (() => {
     const iv   = crypto.getRandomValues(new Uint8Array(12));
     const data = new TextEncoder().encode(JSON.stringify(obj));
     const ct   = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
-    // Merge iv + ciphertext
     const out  = new Uint8Array(iv.length + ct.byteLength);
     out.set(iv, 0);
     out.set(new Uint8Array(ct), iv.length);
@@ -63,30 +60,7 @@ const CRYPTO = (() => {
   return { encrypt, decrypt, getOrCreateRawKey };
 })();
 
-// ── CVX format helpers ────────────────────────────────────────────────────────
-// Format: "CVX1:" + base64(encrypt(JSON of backup))
-// Not human-readable, encrypted, compact.
-
-const CVX = {
-  MAGIC: 'CVX1:',
-
-  async encode(backup) {
-    const encrypted = await CRYPTO.encrypt(backup);
-    return CVX.MAGIC + encrypted;
-  },
-
-  async decode(str) {
-    if (!str.startsWith(CVX.MAGIC)) {
-      // Legacy: try plain JSON
-      try { return JSON.parse(str); } catch (_) {}
-      throw new Error('Formato de arquivo inválido. Esperado arquivo .cvx');
-    }
-    const b64 = str.slice(CVX.MAGIC.length);
-    return CRYPTO.decrypt(b64);
-  }
-};
-
-window.CVX = CVX;
+window.CRYPTO = CRYPTO;
 
 // ── IDB helpers ───────────────────────────────────────────────────────────────
 
@@ -96,7 +70,8 @@ function openDB() {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
 
     req.onupgradeneeded = (e) => {
-      const db = e.target.result;
+      const db  = e.target.result;
+      const old = e.oldVersion;
 
       if (!db.objectStoreNames.contains('personal'))   db.createObjectStore('personal');
       if (!db.objectStoreNames.contains('vagas'))      db.createObjectStore('vagas',      { keyPath: 'uuid' });
@@ -169,22 +144,119 @@ function idbGetAll(store) {
   }));
 }
 
+// ── Timestamp helpers ─────────────────────────────────────────────────────────
+
+function nowISO() { return new Date().toISOString(); }
+
+/** Garante que todo item tenha updatedAt */
+function withTimestamp(item, isNew = false) {
+  const now = nowISO();
+  return {
+    ...item,
+    updatedAt: now,
+    createdAt: isNew ? now : (item.createdAt || now),
+  };
+}
+
+// ── Merge helpers ─────────────────────────────────────────────────────────────
+/**
+ * Compara dois itens pelo updatedAt.
+ * Retorna o mais recente. Se sem data, o incoming vence.
+ */
+function pickNewer(existing, incoming) {
+  if (!existing) return incoming;
+  const dExisting = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+  const dIncoming = incoming.updatedAt ? new Date(incoming.updatedAt).getTime() : Infinity;
+  return dIncoming >= dExisting ? incoming : existing;
+}
+
+/**
+ * Merge genérico de uma store com keyPath.
+ * Para cada item do incoming:
+ * - Se não existe localmente → adiciona
+ * - Se existe → compara updatedAt, mantém o mais recente
+ */
+async function mergeStore(storeName, incomingItems, keyField) {
+  if (!incomingItems?.length) return { added: 0, updated: 0, skipped: 0 };
+  let added = 0, updated = 0, skipped = 0;
+
+  for (const incoming of incomingItems) {
+    const key = incoming[keyField];
+    if (key === undefined || key === null) continue;
+
+    let existing = null;
+    try { existing = await idbGet(storeName, key); } catch (_) {}
+
+    const winner = pickNewer(existing, incoming);
+
+    if (!existing) {
+      await idbPut(storeName, winner);
+      added++;
+    } else if (winner === incoming) {
+      await idbPut(storeName, winner);
+      updated++;
+    } else {
+      skipped++; // local é mais recente
+    }
+  }
+
+  return { added, updated, skipped };
+}
+
+/**
+ * Merge para stores com autoIncrement (sem UUID).
+ * Usa campo estável como chave de matching: company+role para exp, institution+degree para edu, etc.
+ */
+async function mergeAutoStore(storeName, incomingItems, matchFn) {
+  if (!incomingItems?.length) return { added: 0, updated: 0, skipped: 0 };
+  let added = 0, updated = 0, skipped = 0;
+
+  const locals = await idbGetAll(storeName);
+
+  for (const incoming of incomingItems) {
+    // Tenta encontrar localmente pelo id (se existir) ou pela função de match
+    let existing = null;
+    if (incoming.id) {
+      existing = locals.find(l => l.id === incoming.id) || null;
+    }
+    if (!existing && matchFn) {
+      existing = locals.find(l => matchFn(l, incoming)) || null;
+    }
+
+    const winner = pickNewer(existing, incoming);
+
+    if (!existing) {
+      // Novo item — autoIncrement vai gerar id
+      const { id: _, ...withoutId } = incoming;
+      const newId = await idbAdd(storeName, { ...withoutId, updatedAt: incoming.updatedAt || nowISO(), createdAt: incoming.createdAt || nowISO() });
+      added++;
+    } else if (winner === incoming) {
+      // Incoming é mais recente — substitui, mantendo id local
+      await idbPut(storeName, { ...incoming, id: existing.id });
+      updated++;
+    } else {
+      skipped++;
+    }
+  }
+
+  return { added, updated, skipped };
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 const DB = {
 
-  // ── Personal data (encrypted in storage) ──────────────────────────────────
+  // ── Personal data (encrypted) ──────────────────────────────────────────────
   async getPersonal() {
     const raw = await idbGet('personal', 'data');
     if (!raw) return null;
-    // If it's an object (legacy unencrypted), return as-is
-    if (typeof raw === 'object') return raw;
-    // If it's a string, it's encrypted
+    if (typeof raw === 'object') return raw; // legacy
     try { return await CRYPTO.decrypt(raw); } catch (_) { return null; }
   },
 
   async savePersonal(data) {
-    const encrypted = await CRYPTO.encrypt(data);
+    const stamped   = { ...data, updatedAt: nowISO() };
+    const encrypted = await CRYPTO.encrypt(stamped);
     return idbPut('personal', encrypted, 'data');
   },
 
@@ -199,9 +271,10 @@ const DB = {
   },
 
   async saveExperience(exp) {
-    if (exp.id) { await idbPut('experiences', exp); return exp; }
-    const id = await idbAdd('experiences', exp);
-    return { ...exp, id };
+    const stamped = withTimestamp(exp, !exp.id);
+    if (exp.id) { await idbPut('experiences', stamped); return stamped; }
+    const id = await idbAdd('experiences', stamped);
+    return { ...stamped, id };
   },
 
   deleteExperience(id) { return idbDelete('experiences', id); },
@@ -213,9 +286,10 @@ const DB = {
   },
 
   async saveEducation(edu) {
-    if (edu.id) { await idbPut('education', edu); return edu; }
-    const id = await idbAdd('education', edu);
-    return { ...edu, id };
+    const stamped = withTimestamp(edu, !edu.id);
+    if (edu.id) { await idbPut('education', stamped); return stamped; }
+    const id = await idbAdd('education', stamped);
+    return { ...stamped, id };
   },
 
   deleteEducation(id) { return idbDelete('education', id); },
@@ -227,9 +301,10 @@ const DB = {
   },
 
   async saveCertification(cert) {
-    if (cert.id) { await idbPut('certifications', cert); return cert; }
-    const id = await idbAdd('certifications', cert);
-    return { ...cert, id };
+    const stamped = withTimestamp(cert, !cert.id);
+    if (cert.id) { await idbPut('certifications', stamped); return stamped; }
+    const id = await idbAdd('certifications', stamped);
+    return { ...stamped, id };
   },
 
   deleteCertification(id) { return idbDelete('certifications', id); },
@@ -238,14 +313,15 @@ const DB = {
   async listLanguages() { return idbGetAll('languages'); },
 
   async saveLanguage(lang) {
-    if (lang.id) { await idbPut('languages', lang); return lang; }
-    const id = await idbAdd('languages', lang);
-    return { ...lang, id };
+    const stamped = withTimestamp(lang, !lang.id);
+    if (lang.id) { await idbPut('languages', stamped); return stamped; }
+    const id = await idbAdd('languages', stamped);
+    return { ...stamped, id };
   },
 
   deleteLanguage(id) { return idbDelete('languages', id); },
 
-  // ── Build history markdown for prompt ────────────────────────────────────────
+  // ── Build history markdown ────────────────────────────────────────────────────
   async buildHistoryMarkdown() {
     const [exps, edu, certs, langs] = await Promise.all([
       this.listExperiences(),
@@ -261,8 +337,8 @@ const DB = {
       exps.forEach(e => {
         const period = `${fmtYM(e.startDate)} – ${e.current ? 'Atual' : fmtYM(e.endDate)}`;
         md += `### ${e.company} — ${e.role} | ${period}\n`;
-        if (e.location) md += `**Local:** ${e.location}\n`;
-        if (e.stack)    md += `**Stack:** ${e.stack}\n`;
+        if (e.location)    md += `**Local:** ${e.location}\n`;
+        if (e.stack)       md += `**Stack:** ${e.stack}\n`;
         if (e.description) md += `\n${e.description}\n`;
         md += '\n';
       });
@@ -304,12 +380,15 @@ const DB = {
   },
 
   async createVaga({ empresa, cargo, descricao }) {
+    const now  = nowISO();
     const vaga = {
       uuid: crypto.randomUUID(),
       empresa, cargo, descricao,
-      status: 'criada',
-      data_cadastro:    new Date().toISOString(),
-      data_atualizacao: new Date().toISOString(),
+      status:           'criada',
+      data_cadastro:    now,
+      data_atualizacao: now,
+      updatedAt:        now,
+      createdAt:        now,
     };
     await idbPut('vagas', vaga);
     return vaga;
@@ -318,7 +397,8 @@ const DB = {
   async updateVaga(uuid, fields) {
     const vaga = await idbGet('vagas', uuid);
     if (!vaga) throw new Error('Vaga não encontrada');
-    const updated = { ...vaga, ...fields, data_atualizacao: new Date().toISOString() };
+    const now     = nowISO();
+    const updated = { ...vaga, ...fields, data_atualizacao: now, updatedAt: now };
     await idbPut('vagas', updated);
     return updated;
   },
@@ -337,7 +417,8 @@ const DB = {
   },
 
   saveCurriculo(vagaUuid, data) {
-    return idbPut('curriculos', { vaga_uuid: vagaUuid, ...data });
+    const now = nowISO();
+    return idbPut('curriculos', { vaga_uuid: vagaUuid, ...data, updatedAt: now });
   },
 
   deleteCurriculo(vagaUuid) { return idbDelete('curriculos', vagaUuid); },
@@ -347,7 +428,7 @@ const DB = {
     return doc !== null;
   },
 
-  // ── Backup / Restore (CVX format) ─────────────────────────────────────────────
+  // ── Export Backup (JSON puro) ──────────────────────────────────────────────────
   async exportBackup() {
     const [personal, vagas, curriculos, experiences, education, certifications, languages, settings] =
       await Promise.all([
@@ -361,29 +442,93 @@ const DB = {
         this.getSettings(),
       ]);
     return {
-      version: 4,
-      exportedAt: new Date().toISOString(),
+      version:    5,
+      exportedAt: nowISO(),
       personal, vagas, curriculos,
       experiences, education, certifications, languages, settings,
     };
   },
 
+  // ── Import Backup com merge inteligente ───────────────────────────────────────
+  /**
+   * Regras de merge:
+   * - Para cada item importado, verifica se existe localmente pelo id/uuid
+   * - Se não existe: adiciona
+   * - Se existe e incoming.updatedAt > local.updatedAt: substitui
+   * - Se existe e incoming.updatedAt <= local.updatedAt: descarta (local é mais recente)
+   * - Retorna stats de merge para exibir ao usuário
+   */
   async importBackup(backup) {
     if (!backup || !backup.version) throw new Error('Backup inválido ou sem versão');
 
-    if (backup.personal) {
-      // personal comes decrypted from CVX, re-encrypt for storage
-      if (typeof backup.personal === 'object') {
+    const stats = {
+      personal:       false,
+      vagas:          { added: 0, updated: 0, skipped: 0 },
+      curriculos:     { added: 0, updated: 0, skipped: 0 },
+      experiences:    { added: 0, updated: 0, skipped: 0 },
+      education:      { added: 0, updated: 0, skipped: 0 },
+      certifications: { added: 0, updated: 0, skipped: 0 },
+      languages:      { added: 0, updated: 0, skipped: 0 },
+    };
+
+    // Personal: compara updatedAt
+    if (backup.personal && typeof backup.personal === 'object') {
+      const local = await this.getPersonal();
+      const localDate    = local?.updatedAt    ? new Date(local.updatedAt).getTime()    : 0;
+      const incomingDate = backup.personal.updatedAt ? new Date(backup.personal.updatedAt).getTime() : Infinity;
+      if (incomingDate >= localDate) {
         await this.savePersonal(backup.personal);
+        stats.personal = true;
       }
     }
-    if (backup.vagas)           for (const v of backup.vagas)          await idbPut('vagas', v);
-    if (backup.curriculos)      for (const c of backup.curriculos)     await idbPut('curriculos', c);
-    if (backup.experiences)     for (const e of backup.experiences)    await idbPut('experiences', e);
-    if (backup.education)       for (const e of backup.education)      await idbPut('education', e);
-    if (backup.certifications)  for (const c of backup.certifications) await idbPut('certifications', c);
-    if (backup.languages)       for (const l of backup.languages)      await idbPut('languages', l);
-    if (backup.settings)        await idbPut('settings', backup.settings, 'config');
+
+    // Vagas — chave: uuid
+    if (backup.vagas?.length) {
+      stats.vagas = await mergeStore('vagas', backup.vagas, 'uuid');
+    }
+
+    // Curriculos — chave: vaga_uuid
+    if (backup.curriculos?.length) {
+      stats.curriculos = await mergeStore('curriculos', backup.curriculos, 'vaga_uuid');
+    }
+
+    // Experiências — autoIncrement, match por (company + role + startDate) ou por id
+    if (backup.experiences?.length) {
+      stats.experiences = await mergeAutoStore('experiences', backup.experiences,
+        (l, i) => l.company === i.company && l.role === i.role && l.startDate === i.startDate
+      );
+    }
+
+    // Educação — match por (institution + degree)
+    if (backup.education?.length) {
+      stats.education = await mergeAutoStore('education', backup.education,
+        (l, i) => l.institution === i.institution && l.degree === i.degree
+      );
+    }
+
+    // Certificações — match por (name + issuer)
+    if (backup.certifications?.length) {
+      stats.certifications = await mergeAutoStore('certifications', backup.certifications,
+        (l, i) => l.name === i.name && l.issuer === i.issuer
+      );
+    }
+
+    // Idiomas — match por language
+    if (backup.languages?.length) {
+      stats.languages = await mergeAutoStore('languages', backup.languages,
+        (l, i) => l.language === i.language
+      );
+    }
+
+    // Settings — apenas substitui se não existir localmente ou se backup for mais recente
+    if (backup.settings && Object.keys(backup.settings).length) {
+      const local = await this.getSettings();
+      if (!local || !Object.keys(local).length) {
+        await this.saveSettings(backup.settings);
+      }
+    }
+
+    return stats;
   },
 };
 
@@ -396,4 +541,3 @@ function fmtYM(str) {
 }
 
 window.DB = DB;
-window.CRYPTO = CRYPTO;

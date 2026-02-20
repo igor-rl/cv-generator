@@ -1,15 +1,15 @@
 {
   "name": "curriculos-estrategicos",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "description": "Sistema de currículos estratégicos com IA — PWA offline-first",
   "scripts": {
-    "version": "node generate-version.js",
-    "serve": "node generate-version.js && python3 -m http.server 8000",
-    "serve:node": "node generate-version.js && npx serve . -p 8000",
-    "deploy:vercel": "node generate-version.js && npx vercel",
-    "deploy:netlify": "node generate-version.js && npx netlify deploy --prod"
+    "version": "node assets/js/generate-version.js",
+    "serve": "node assets/js/generate-version.js && python3 -m http.server 8000",
+    "serve:node": "node assets/js/generate-version.js && npx serve . -p 8000",
+    "deploy:vercel": "node assets/js/generate-version.js && npx vercel",
+    "deploy:netlify": "node assets/js/generate-version.js && npx netlify deploy --prod"
   },
-  "keywords": ["pwa", "curriculo", "ia", "groq"],
+  "keywords": ["pwa", "curriculo", "ia", "groq", "router"],
   "author": "igorlage",
   "license": "MIT"
 }
