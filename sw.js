@@ -159,11 +159,22 @@ async function cacheFirst(request) {
 }
 
 // ── Mensagens do cliente ──────────────────────────────────────────────────────
-self.addEventListener('message', (e) => {
-  if (e.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  if (e.data?.type === 'CHECK_VERSION') {
-    e.source?.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
-  }
+self.addEventListener('activate', (e) => {
+  console.log('[SW] Activating version:', CACHE_VERSION);
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+      .then(() => {
+        // Aguarda o clients.claim() propagar antes de notificar
+        return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      })
+      .then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION, reload: true });
+        });
+      })
+  );
 });

@@ -112,16 +112,23 @@ const App = (() => {
     window.addEventListener('load', async () => {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js');
+        // Detecta quando um novo SW fica "waiting" (já instalado, esperando ativar)
+        // Isso cobre o caso em que o SW novo instala mas a aba não fecha
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              window.location.reload();
+            }
+          });
+        });
         console.log('[App] SW registrado:', reg.scope);
 
         navigator.serviceWorker.addEventListener('message', (event) => {
-          const msg = event.data;
-          if (!msg) return;
-          if (msg.type === 'SW_UPDATED') {
-            console.log('[App] SW atualizado para versão:', msg.version);
-            if (msg.reload) {
-              setTimeout(() => window.location.reload(), 500);
-            }
+          if (event.data?.type === 'SW_UPDATED') {
+            // Pequeno delay garante que o novo SW já está no controle
+            // antes de recarregar, evitando servir assets do cache antigo
+            setTimeout(() => window.location.reload(), 1000);
           }
         });
 
