@@ -1,22 +1,13 @@
 /**
- * router.js — Client-side router com hash-based routing
+ * router.js — SPA Router universal
  *
- * Rotas disponíveis:
- *   /          → home
- *   /home      → home
- *   /profile   → profile
- *   /exp       → exp
- *   /edu       → edu
- *   /certs     → certs
- *   /langs     → langs
- *   /vagas     → vagas
- *   /config    → settings
- *
- * Usa History API (pushState) com fallback para hash em ambientes file://
+ * Funciona:
+ * - Local dev / file:// → hash fallback (#home, #profile, etc)
+ * - Docker / local server → History API
+ * - Produção (Vercel) → History API
  */
 
 const Router = (() => {
-  // Mapa de rotas → page id
   const ROUTES = {
     '':        'home',
     'home':    'home',
@@ -30,7 +21,6 @@ const Router = (() => {
     'settings':'settings',
   };
 
-  // Inverso: page id → path canônico
   const PAGE_TO_PATH = {
     home:     '/home',
     profile:  '/profile',
@@ -42,34 +32,49 @@ const Router = (() => {
     settings: '/config',
   };
 
+  const USE_HASH_FALLBACK = window.location.protocol === 'file:' || !window.history.pushState;
+
   function getPageFromPath(path) {
-    // Remove leading slash e query string
     const clean = (path || '').replace(/^\//, '').split('?')[0].split('#')[0].toLowerCase();
     return ROUTES[clean] || 'home';
   }
 
   function getCurrentPath() {
-    return window.location.pathname;
+    return USE_HASH_FALLBACK
+      ? window.location.hash.replace(/^#/, '') || ''
+      : window.location.pathname;
   }
 
   function navigate(page, { replace = false } = {}) {
     const path = PAGE_TO_PATH[page] || '/home';
-    if (replace) {
-      history.replaceState({ page }, '', path);
+
+    if (USE_HASH_FALLBACK) {
+      if (replace) window.location.replace(`#${page}`);
+      else window.location.hash = page;
     } else {
-      history.pushState({ page }, '', path);
+      if (replace) history.replaceState({ page }, '', path);
+      else history.pushState({ page }, '', path);
     }
+
     App.navigateTo(page, { updateUrl: false });
   }
 
   function init() {
-    // Lida com navegação pelo histórico do browser (botão voltar/avançar)
+    // Botão voltar/avançar
     window.addEventListener('popstate', (e) => {
-      const page = e.state?.page || getPageFromPath(window.location.pathname);
+      const page = e.state?.page || getPageFromPath(getCurrentPath());
       App.navigateTo(page, { updateUrl: false });
     });
 
-    // Intercepta clicks em links internos (se houver)
+    // Hash fallback
+    if (USE_HASH_FALLBACK) {
+      window.addEventListener('hashchange', () => {
+        const page = getPageFromPath(getCurrentPath());
+        App.navigateTo(page, { updateUrl: false });
+      });
+    }
+
+    // Links internos
     document.addEventListener('click', (e) => {
       const link = e.target.closest('a[data-route]');
       if (!link) return;
@@ -77,10 +82,12 @@ const Router = (() => {
       navigate(link.dataset.route);
     });
 
-    // Rota inicial baseada na URL atual
-    const initialPage = getPageFromPath(window.location.pathname);
-    // Substitui a URL atual sem criar nova entrada no histórico
-    history.replaceState({ page: initialPage }, '', PAGE_TO_PATH[initialPage] || '/home');
+    // Página inicial
+    const initialPage = getPageFromPath(getCurrentPath());
+
+    if (USE_HASH_FALLBACK) window.location.replace(`#${initialPage}`);
+    else history.replaceState({ page: initialPage }, '', PAGE_TO_PATH[initialPage] || '/home');
+
     return initialPage;
   }
 
