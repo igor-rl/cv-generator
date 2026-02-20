@@ -1,14 +1,18 @@
 const express = require('express');
 const path = require('path');
+
 const app = express();
+const PORT = process.env.PORT || 8000;
+const ROOT = __dirname;
 
-const PORT = 8000;
-const PUBLIC = path.join(__dirname, 'public');
+// Servir todos os arquivos (CSS, JS etc)
+app.use(express.static(ROOT));
 
-app.use(express.static(PUBLIC));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(PUBLIC, 'index.html'));
+// Fallback SPA sem erro no Express 5:
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(ROOT, 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`Dev SPA rodando: http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`SPA rodando em http://localhost:${PORT}`);
+});
