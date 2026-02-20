@@ -17,7 +17,7 @@ const App = (() => {
 
   // ── Navigation ───────────────────────────────────────────────────────────
   function setupNavigation() {
-    // Sidebar nav items
+    // Sidebar + mobile nav items
     document.querySelectorAll('[data-nav]').forEach(el => {
       el.addEventListener('click', () => {
         const target = el.dataset.nav;
@@ -33,7 +33,7 @@ const App = (() => {
   function navigateTo(page) {
     currentPage = page;
 
-    // Update active states — sidebar
+    // Update active states — sidebar + mobile nav
     document.querySelectorAll('[data-nav]').forEach(el => {
       el.classList.toggle('active', el.dataset.nav === page);
     });
@@ -51,7 +51,7 @@ const App = (() => {
       case 'edu':      window.HistoryModule?.loadEducation();   break;
       case 'certs':    window.HistoryModule?.loadCertifications(); break;
       case 'langs':    window.HistoryModule?.loadLanguages();    break;
-      case 'backup':   /* no load needed */ break;
+      case 'settings': window.SettingsModule?.load(); break;
     }
 
     // Close any mobile modal
@@ -121,6 +121,8 @@ const App = (() => {
     const el = document.getElementById(id);
     if (el) {
       el.classList.add('open');
+      // Prevent background page scrolling while modal is open
+      document.body.style.overflow = 'hidden';
       el.addEventListener('click', (e) => {
         if (e.target === el) closeModal(id);
       }, { once: true });
@@ -129,7 +131,12 @@ const App = (() => {
 
   function closeModal(id) {
     const el = document.getElementById(id);
-    if (el) el.classList.remove('open');
+    if (el) {
+      el.classList.remove('open');
+      // Restore scrolling only if no other modals are open
+      const anyOpen = document.querySelector('.modal-overlay.open');
+      if (!anyOpen) document.body.style.overflow = '';
+    }
   }
 
   // ── Status messages ───────────────────────────────────────────────────────

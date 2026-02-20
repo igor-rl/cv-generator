@@ -1,0 +1,228 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   modals.css — Todas as modais: overlay, box, header, body, footer
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Base Modal ──────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,15,20,0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  padding-top: calc(20px + var(--safe-top));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  /* CRÍTICO: overlay NÃO deve rolar */
+  overflow: hidden;
+  touch-action: none;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 580px;
+  max-height: calc(90vh - var(--safe-top));
+  display: flex;
+  flex-direction: column;
+  /* overflow hidden mantém border-radius nos filhos */
+  overflow: hidden;
+  transform: scale(0.97) translateY(8px);
+  transition: transform 0.2s ease;
+}
+
+.modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+
+.modal-box-lg { max-width: 860px; }
+.modal-box-sm { max-width: 420px; }
+
+/* ── Modal sections ──────────────────────────────────────────────────────── */
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0; /* header nunca encolhe */
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.modal-close {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: var(--surface-dim);
+  border-radius: 8px; cursor: pointer;
+  color: #6b7589;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.modal-close:hover { background: var(--surface-mid); color: var(--ink); }
+
+/*
+ * CRÍTICO: .modal-body é o ÚNICO elemento scrollável da modal.
+ *
+ * Regras necessárias:
+ * - flex: 1          → ocupa o espaço restante entre header e footer
+ * - min-height: 0    → SEM isso, flex children não encolhem (bug clássico)
+ * - overflow-y: auto → scroll interno
+ * - overscroll-behavior: contain → impede scroll bleeding para o fundo
+ * - touch-action: pan-y → permite scroll vertical em iOS
+ */
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0; /* footer nunca encolhe */
+  background: var(--surface-dim);
+  flex-wrap: wrap;
+}
+
+/* ── Textareas dentro de modais: SEMPRE roláveis ────────────────────────── */
+/*
+ * Textareas dentro de modais precisam de overflow-y: auto explícito
+ * para rolar seu próprio conteúdo sem depender do scroll da modal-body.
+ * O touch-action: pan-y é crítico para iOS.
+ */
+.modal-body .form-textarea {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  resize: vertical;
+}
+
+/* ── Viz Modal (iframe de currículo) ─────────────────────────────────────── */
+.modal-viz .modal-box {
+  max-width: 1000px;
+  height: calc(92vh - var(--safe-top));
+  max-height: calc(92vh - var(--safe-top));
+}
+
+.modal-viz .modal-body {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#resumeIframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #f9fafb;
+  display: block;
+  min-height: 0;
+}
+
+/* ── GROQ Progress Modal ─────────────────────────────────────────────────── */
+#groqProgressModal .modal-box {
+  max-width: 380px;
+  text-align: center;
+}
+
+.groq-progress-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px 24px;
+}
+
+.groq-progress-spinner {
+  width: 48px; height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--groq);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.groq-progress-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+#groqProgressMsg {
+  font-size: 14px;
+  color: #6b7589;
+  min-height: 20px;
+}
+
+/* ── Suggest Change Manual Section ──────────────────────────────────────── */
+.suggest-manual-section {
+  display: none;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+/* ── Fallback notice ─────────────────────────────────────────────────────── */
+#fallbackNotice {
+  display: none;
+  background: var(--warning-light);
+  color: #78350f;
+  border-left: 3px solid var(--warning);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* ── Mobile Modal overrides ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+    touch-action: none;
+  }
+
+  .modal-box {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 92vh;
+    transform: translateY(20px);
+  }
+
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+
+  .modal-body {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-footer .btn { width: auto; flex: 1; }
+  .modal-footer .btn-ghost { flex: 0; }
+
+  .modal-viz .modal-box { height: 100vh; max-height: 100vh; border-radius: 0; }
+}

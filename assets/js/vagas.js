@@ -1,6 +1,6 @@
 /**
  * vagas.js — Job listings management v4
- * - GROQ auto-generation
+ * - GROQ auto-generation (respects groq_enabled toggle)
  * - "Sugerir Alteração" instead of Edit JSON
  * - Scrollable modal fix
  */
@@ -162,7 +162,8 @@ window.VagasModule = (() => {
 
     const actionsEl = document.getElementById('detail_actions');
     const cfg       = await DB.getSettings();
-    const hasGroq   = !!(cfg.groq_key && cfg.groq_key.startsWith('gsk_'));
+    // GROQ is active only if key exists AND enabled toggle is on
+    const hasGroq   = !!(cfg.groq_key && cfg.groq_key.startsWith('gsk_') && cfg.groq_enabled !== false);
 
     const groqBadge = hasGroq
       ? `<span style="font-size:11px;background:var(--success-light);color:#065f46;padding:3px 8px;border-radius:99px;font-weight:600;">⚡ GROQ</span>`
@@ -411,9 +412,9 @@ window.VagasModule = (() => {
     App.closeModal('vagaDetailModal');
     App.openModal('suggestChangeModal');
 
-    // Check if GROQ is available
+    // Check if GROQ is available (key + enabled)
     const cfg = await DB.getSettings();
-    const hasGroq = !!(cfg.groq_key && cfg.groq_key.startsWith('gsk_'));
+    const hasGroq = !!(cfg.groq_key && cfg.groq_key.startsWith('gsk_') && cfg.groq_enabled !== false);
     const modeEl = document.getElementById('suggest-mode-indicator');
     if (modeEl) {
       modeEl.innerHTML = hasGroq

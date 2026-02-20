@@ -1,11 +1,19 @@
 /**
  * groq.js — GROQ API integration
- * Uses GROQ to generate curriculum automatically when key is configured.
- * Falls back to manual copy/paste flow if key missing, invalid, or quota exceeded.
+ * Uses GROQ to generate curriculum automatically when key is configured AND enabled.
+ * Falls back to manual copy/paste flow if key missing, disabled, invalid, or quota exceeded.
  */
 
 window.GROQ = (() => {
   const GROQ_API = 'https://api.groq.com/openai/v1/chat/completions';
+
+  // ── Check if GROQ is active (key set + enabled) ───────────────────────────
+  async function isActive() {
+    const cfg = await DB.getSettings();
+    const hasKey = !!(cfg.groq_key && cfg.groq_key.startsWith('gsk_'));
+    const isEnabled = cfg.groq_enabled !== false; // default true
+    return hasKey && isEnabled;
+  }
 
   // ── Test connection ───────────────────────────────────────────────────────
   async function test(key) {
@@ -41,6 +49,11 @@ window.GROQ = (() => {
     const cfg = await DB.getSettings();
     const key = cfg.groq_key;
 
+    // Respect the enable toggle
+    if (cfg.groq_enabled === false) {
+      return { ok: false, fallback: true, reason: 'GROQ desabilitado nas configurações' };
+    }
+
     if (!key || !key.startsWith('gsk_')) {
       return { ok: false, fallback: true, reason: 'Chave GROQ não configurada' };
     }
@@ -67,7 +80,6 @@ window.GROQ = (() => {
       if (res.status === 401) return { ok: false, fallback: true, reason: 'Chave GROQ inválida — usando fluxo manual' };
       if (res.status === 429) return { ok: false, fallback: true, reason: 'Quota GROQ excedida — usando fluxo manual' };
       if (!res.ok) {
-        const errText = await res.text();
         return { ok: false, fallback: true, reason: `GROQ erro ${res.status} — usando fluxo manual` };
       }
 
@@ -93,6 +105,11 @@ window.GROQ = (() => {
   async function suggestChange(currentJson, userRequest, changePrompt, onProgress) {
     const cfg = await DB.getSettings();
     const key = cfg.groq_key;
+
+    // Respect the enable toggle
+    if (cfg.groq_enabled === false) {
+      return { ok: false, fallback: true, reason: 'GROQ desabilitado nas configurações' };
+    }
 
     if (!key || !key.startsWith('gsk_')) {
       return { ok: false, fallback: true, reason: 'Chave GROQ não configurada' };
@@ -164,5 +181,5 @@ window.GROQ = (() => {
     return null;
   }
 
-  return { test, generate, suggestChange, extractJSON };
+  return { test, generate, suggestChange, extractJSON, isActive };
 })();
