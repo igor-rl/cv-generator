@@ -12,7 +12,7 @@
  */
 
 // ─── BUMP ESTE VALOR A CADA DEPLOY ────────────────────────────────────────────
-const CACHE_VERSION = '__CACHE_VERSION__'; // substituído pelo generate-version.js
+const CACHE_VERSION = 'MMCULE19'; // substituído pelo generate-version.js
 // ──────────────────────────────────────────────────────────────────────────────
 
 const CACHE_NAME   = `curriculos-v${CACHE_VERSION}`;
