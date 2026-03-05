@@ -16,7 +16,7 @@ body {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
 }
 
-.resume-content { padding: 40px 52px 48px; }
+.resume-content { padding: 0 52px 48px; }
 
 .resume-header {
   text-align: center;
