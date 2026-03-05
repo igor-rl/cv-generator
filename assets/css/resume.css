@@ -23,7 +23,6 @@ body {
   margin-top: 0;
   margin-bottom: 18px;
   padding-bottom: 24px;
-  border-bottom: 2px solid #e5e7eb;
 }
 
 .name { font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 8px; letter-spacing: -0.025em; }
@@ -40,6 +39,7 @@ body {
   letter-spacing: 0.05em;
   margin-bottom: 12px;
   padding-bottom: 6px;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .summary-text { font-size: 13px; line-height: 1.5; color: #374151; }
@@ -128,7 +128,7 @@ body {
 @media print {
   @page {
     size: A4;
-    margin: 0 20mm 18mm 20mm;
+    margin: 18mm 20mm 18mm 20mm;
   }
 
   html {
