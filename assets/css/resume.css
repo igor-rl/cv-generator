@@ -128,7 +128,7 @@ body {
 @media print {
   @page {
     size: A4;
-    margin: 18mm 20mm 18mm 20mm;
+    margin: 0 20mm 18mm 20mm;
   }
 
   html {
@@ -160,7 +160,7 @@ body {
   }
 
   .resume-content {
-    padding: 0 !important;
+    padding: 1px 0 0 0 !important;
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
