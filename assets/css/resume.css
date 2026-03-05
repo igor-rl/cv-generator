@@ -40,7 +40,6 @@ body {
   letter-spacing: 0.05em;
   margin-bottom: 12px;
   padding-bottom: 6px;
-  border-bottom: 2px solid #e5e7eb;
 }
 
 .summary-text { font-size: 13px; line-height: 1.5; color: #374151; }
